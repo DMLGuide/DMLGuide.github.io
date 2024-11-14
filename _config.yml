@@ -1,8 +1,17 @@
-title: Just the Docs Template
-description: A starter template for a Jeykll site using the Just the Docs theme!
+title: The Hitchhiker's Guide to Double/Debiased Machine Learning
+description: A comprehensive overview of Double/Debiased Machine Learning resources.
 theme: just-the-docs
 
 url: https://just-the-docs.github.io
 
 aux_links:
   Template Repository: https://github.com/just-the-docs/just-the-docs-template
+
+# Enable MathJax
+kramdown:
+  math_engine: mathjax
+
+# UChicago colors
+color_scheme: custom
+
+favicon_ico: "/assets/images/favicon.svg"

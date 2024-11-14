@@ -1,0 +1,23 @@
+// _sass/color_schemes/custom.scss
+
+// UChicago Colors
+$uchicago-maroon: #800000;
+$uchicago-white: #ffffff;
+$uchicago-grey: #767676;
+$uchicago-black: #000000;
+
+$link-color: $uchicago-maroon !default;
+$btn-primary-color: $uchicago-maroon !default;
+$base-button-color: $uchicago-maroon !default;
+
+$body-background-color: $uchicago-white !default;
+$sidebar-color: $uchicago-white !default;
+$search-background-color: $uchicago-white !default;
+$table-background-color: $uchicago-white !default;
+
+$body-text-color: $uchicago-black !default;
+$body-heading-color: $uchicago-maroon !default;
+$nav-child-link-color: $uchicago-grey !default;
+$search-result-preview-color: $uchicago-grey !default;
+$feedback-color: mix(black, $sidebar-color, 3%) !default;
+$border-color: $uchicago-grey !default;

@@ -1,0 +1,65 @@
+.site-title {
+    font-size: 1rem !important;
+    line-height: 1.2;
+    padding: 0.05rem;
+  }
+
+// UChicago Colors
+$uchicago-maroon: #800000;
+$uchicago-white: #ffffff;
+$uchicago-grey: #767676;
+$uchicago-black: #000000;
+
+.side-bar {
+  background-color: transparent;
+}
+
+.site-header {
+  background-color: transparent;
+}
+
+.site-title {
+  color: $uchicago-maroon !important;
+  
+  &:hover {
+    background-image: linear-gradient(-90deg, rgba($uchicago-maroon, 0.1) 0%, rgba($uchicago-maroon, 0) 100%) !important;
+  }
+}
+
+// Style for all hover/active gradients
+.nav-list .nav-list-item .nav-list-link:hover,
+.nav-list .nav-list-item .nav-list-link.active,
+.site-button:hover,
+.site-button.active {
+  background-image: linear-gradient(-90deg, rgba($uchicago-maroon, 0.1) 0%, rgba($uchicago-maroon, 0) 100%);
+}
+
+.nav-list-link {
+  color: $uchicago-maroon !important;
+}
+
+.main-content {
+  h1, h2, h3, h4, h5, h6 {
+    color: $uchicago-maroon;
+  }
+  
+  a {
+    color: $uchicago-maroon;
+  }
+}
+
+.search-input {
+  background-color: $uchicago-white;
+  color: $uchicago-black;
+  border-color: $uchicago-maroon;
+}
+
+.btn {
+  background-color: $uchicago-maroon;
+  color: $uchicago-white;
+}
+
+// Hide template repository button
+.aux-nav-list-item {
+  display: none !important;
+}
