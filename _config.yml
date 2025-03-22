@@ -1,4 +1,4 @@
-title: The Hitchhiker's Guide to Double/Debiased Machine Learning
+title: A Guide to Double/Debiased Machine Learning
 description: A comprehensive overview of Double/Debiased Machine Learning resources.
 theme: just-the-docs
 
@@ -15,3 +15,6 @@ kramdown:
 color_scheme: custom
 
 favicon_ico: "/assets/images/favicon.svg"
+
+plugins:
+  - jekyll-tabs
