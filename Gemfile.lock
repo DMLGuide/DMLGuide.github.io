@@ -188,7 +188,7 @@ DEPENDENCIES
   base64
   csv
   jekyll (~> 4.3.4)
-  jekyll-tabs
+  jekyll-tabs (~> 1.2)
   just-the-docs (= 0.10.0)
   logger
   ostruct

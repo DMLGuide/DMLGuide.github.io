@@ -7,18 +7,24 @@ description: ""
 permalink: /examples/GN
 ---
 
-
 # Effect of 401(k) Participation on Financial Wealth
 
-{% raw %}{% tabs %}
-{% tab TabTitle1 %}
-Content for tab 1
+{% tabs log %}
+
+{% tab log php %}
+gsg
+```php
+var_dump('hello');
+```
 {% endtab %}
 
-{% tab TabTitle2 %}
-Content for tab 2
+{% tab log js %}
+```javascript
+console.log('hello');
+```
 {% endtab %}
-{% endtabs %}{% endraw %}
+
+{% endtabs %}
 
 In this example we illustrate the basic workings of DML using a simple empirical example.
 

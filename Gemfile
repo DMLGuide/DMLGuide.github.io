@@ -10,4 +10,4 @@ gem "base64"
 gem "sassc", "~> 2.4.0"
 gem "webrick", "~> 1.8"
 
-gem "jekyll-tabs"
+gem "jekyll-tabs", "~> 1.2"
