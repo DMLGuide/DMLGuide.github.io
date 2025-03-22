@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Effect of 401(k) Participation on Financial Wealth
+title: Understanding Cultural Persistence and Change 
 nav_order: 4
 math: true
 description: ""
@@ -25,8 +25,7 @@ Giuliano and Nunn (G-N) are concerned about omitted confounders, and include 4 c
 
 The example is useful for illustrating how DML works for several reasons: the dataset is small and available online, visualization is easy, reproduction of results is straightforward, and the example shows how DML can be used as a robustness check even in the simplest of settings.
 
-The G-N dataset used for this demonstration is available at ...
-The example below is based in part on the G-N replication code.
+The G-N dataset used for this demonstration is available at [here](https://dmlguide.github.io/assets/dta/GN2021.dta). 
 
 The variables used are:
 
@@ -39,25 +38,22 @@ The variables used are:
 | `polhierarchies_ee` | Control #3: political hierarchies (a measure of political centralization). | 
 | `loggdp`| Control #4: log GDP per capita in the country of origin at the time of the survey. |
 
-Their model with controls is one where the controls enter linearly and is estimated using OLS.
-The effect of climatic instability on the importance of tradition is negative, with a coefficient that is different from zero at conventional significance levels. 
+Their model with controls is one where the controls enter linearly and is estimated using OLS. The effect of climatic instability on the importance of tradition is negative, with a coefficient that is different from zero at conventional significance levels. 
+
 G-N summarize as follows (p. 155):
 > Based on the estimates from column 4, a one-standard-deviation increase in cross-generational instability (0.11) is associated with a reduction in the tradition index of 1.824×0.11=0.20, which is 36% of a standard deviation of the tradition variable.
 
-The code below reproduces columns (3) and (4) in Table 1 of the published paper.
-Column (3) is a bivariate linear regression of the outcome (importance of tradition) on the causal variable of interest (ancestral climatic instability).
-Column (4) has the OLS results when the 4 controls are included.
-In the DML example below, we show how to use DML to estimate the Column (4) specification.
-
 ## Replication
+
+We first reproduce, with the help of G-N's replication code, columns (3) and (4) in Table 1 of the published paper. Column (3) is a bivariate linear regression of the outcome (importance of tradition) on the causal variable of interest (ancestral climatic instability). Column (4) has the OLS results when the 4 controls are included. In the DML example below, we show how to use DML to estimate the Column (4) specification.
 
 We also reproduce their replication code for Figure 5, which is a simple scatterplot of the bivariate regression with no controls reported in Column (3).
 
 <details markdown="block">
 <summary>Stata code</summary>
-sf
+
 ```
-use "$datafolder/Table1", clear
+use "https://dmlguide.github.io/assets/dta/GN2021.dta", clear
 
 // shorten the name of the causal variable of interest to sd_EE
 rename sd_of_gen_mean_temp_anom_EE sd_EE
@@ -80,15 +76,11 @@ drop hat
 // replicate results with controls in Table 1, column (4).
 reg A198new sd_EE v104_ee settlement_ee polhierarchies_ee loggdp, robust
 ```
-fsdf
 </details>
 
-## Extended model
+## Robustness check
 
-A useful robustness check is to ask whether the results with controls are sensitive to the assumption that the controls enter linearly.
-DML can help answer this question.
-Below we estimate the model with controls using DML and the partially-linear model (PLM).
-The specification is very simple to start: we keep the assumption that the controls enter separately, but drop linearity.
+A useful robustness check is to ask whether the results with controls are sensitive to the assumption that the controls enter linearly. DML can help answer this question. Below we estimate the model with controls using DML and the partially-linear model (PLM). The specification is very simple to start: we keep the assumption that the controls enter separately, but drop linearity.
 
 The estimation procedure takes the following steps:
 
@@ -97,14 +89,9 @@ The estimation procedure takes the following steps:
 3. Cross-fitting: obtain cross-fit estimates of the two conditional expectations.
 4. Estimation: regress the residualized outcome variable on the residualized causal variable of interest.
 
-We have no strong priors on whether a linear or non-linear learner is more appropriate, or whether regularization is needed at all.
-Hence we use 3 learners in this example: unregularized OLS, cross-validated Lasso, and a random forest.
-We also use short-stacking to combine the estimated conditional expectations from these 3 learners.
-Short-stacking is computationally cheap, and for the same reason the initial estimation is done once, i.e., we do not resample (re-cross-fit based on a different split).
+We have no strong priors on whether a linear or non-linear learner is more appropriate, or whether regularization is needed at all. Hence we use 3 learners in this example: unregularized OLS, cross-validated Lasso, and a random forest. We also use short-stacking to combine the estimated conditional expectations from these 3 learners. Short-stacking is computationally cheap, and for the same reason the initial estimation is done once, i.e., we do not resample (re-cross-fit based on a different split).
 
-The dataset is small, and so we choose 10-fold cross-fitting.
-This means that learners are trained on about 66-67 observations, and OOS predictions are obtained for the remaining 7-8 observations.
-(If the dataset were larger, we could e.g. use 5-fold cross-fitting and save some computation time.)
+The dataset is small, and so we choose 10-fold cross-fitting. This means that learners are trained on about 66-67 observations, and OOS predictions are obtained for the remaining 7-8 observations. (If the dataset were larger, we could e.g. use 5-fold cross-fitting and save some computation time.)
 
 <details markdown="block">
 <summary>Stata code</summary>
@@ -163,21 +150,23 @@ ddml crossfit, shortstack nostdstack
 // causal variable of interest X using OLS.
 ddml estimate, robust
 ```
-</detail>
+</details>
 
 The DML short-stacked results are quite close to the original linear specification use by G-N:
 the coefficient is slightly larger, as is the estimated standard error.
 A natural interpretation is that the G-N results still stand in this robustness check.
 
-This does not mean, however, that the linear specification was the "right" choice.
-Inspection of the short-stacking weights shows that almost no weight is placed on unregularized OLS.
-Moreover, the random forest learner gets a substantial weight in both of the conditional expectation estimates.
-This suggests that some nonlinearity is present, but that the assumption of linearity does not substantially affect the results.
+This does not mean, however, that the linear specification was the "right" choice. Inspection of the short-stacking weights shows that almost no weight is placed on unregularized OLS. Moreover, the random forest learner gets a substantial weight in both of the conditional expectation estimates. This suggests that some nonlinearity is present, but that the assumption of linearity does not substantially affect the results.
 
+<details markdown="block">
+<summary>Stata code</summary>
+```
 // Display the short-stack weights.
 // Note that unregularized OLS gets a low weight for both Y and D,
 // and the random forest learner gets a substantial weight in both.
 ddml extract, show(ssweights)
+```
+</details>
 
 ## Final model
 
@@ -240,13 +229,11 @@ ddml crossfit, shortstack poolstack
 ddml estimate, robust
 ddml estimate, spec(st) rep(md) notable replay
 ddml estimate, spec(ps) rep(md) notable replay
-</detail>
+</details>
 
-The median results from the 11 DML estimations are again similar to the original G-N results.
-The conclusion is again that their specification is robust to dropping the linearity assumption.
+The median results from the 11 DML estimations are again similar to the original G-N results. The conclusion is again that their specification is robust to dropping the linearity assumption.
 
-Note that the variation across the 11 refits introduced by the randomization of the cross-fit split is not trivial - the DML coefficient estimates range from about -1.7 to about -2.3 - but not enough to overturn the conclusion above.
-Increasing the number of refits is worth considering here.
+Note that the variation across the 11 refits introduced by the randomization of the cross-fit split is not trivial - the DML coefficient estimates range from about -1.7 to about -2.3 - but not enough to overturn the conclusion above. Increasing the number of refits is worth considering here.
 
 It's also still the case that there is evidence of nonlinearity:
 all 3 stacking procedures tend to put a low weight on unregularized OLS.

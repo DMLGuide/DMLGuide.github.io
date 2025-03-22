@@ -17,3 +17,5 @@ vendor/
 
 # Ignore nix stuff
 .direnv/
+
+.DS_Store
