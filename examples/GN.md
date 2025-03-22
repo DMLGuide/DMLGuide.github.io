@@ -76,6 +76,7 @@ drop hat
 // replicate results with controls in Table 1, column (4).
 reg A198new sd_EE v104_ee settlement_ee polhierarchies_ee loggdp, robust
 ```
+
 </details>
 
 ## Robustness check
@@ -95,6 +96,7 @@ The dataset is small, and so we choose 10-fold cross-fitting. This means that le
 
 <details markdown="block">
 <summary>Stata code</summary>
+
 ```
 // In the G-N estimations, GDP is missing for one country.
 // For simplicity, we just drop this one country so that it is never used.
@@ -150,6 +152,7 @@ ddml crossfit, shortstack nostdstack
 // causal variable of interest X using OLS.
 ddml estimate, robust
 ```
+
 </details>
 
 The DML short-stacked results are quite close to the original linear specification use by G-N:
@@ -160,12 +163,14 @@ This does not mean, however, that the linear specification was the "right" choic
 
 <details markdown="block">
 <summary>Stata code</summary>
+
 ```
 // Display the short-stack weights.
 // Note that unregularized OLS gets a low weight for both Y and D,
 // and the random forest learner gets a substantial weight in both.
 ddml extract, show(ssweights)
 ```
+
 </details>
 
 ## Final model
@@ -181,14 +186,13 @@ Cross-fitting introduces randomness by using a random split into cross-fit folds
 A straightfoward way to reduce the sensitivity of the results to the split is to re-estimate using different cross-fit splits and aggregate the results.
 Aggregation can use the median or the mean.
 
-Short-stacking stacking is computationally appealing but there are other options.
-Standard stacking - stacking separately for each cross-fit estimation - is also a possibility.
-"Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately).
+Short-stacking stacking is computationally appealing but there are other options. Standard stacking - stacking separately for each cross-fit estimation - is also a possibility. "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately).
 
 The example below illustrates.
 
 <details markdown="block">
 <summary>Stata code</summary>
+
 ```
 // "Final" results:
 // 1. Set seed for replicability.
@@ -229,6 +233,7 @@ ddml crossfit, shortstack poolstack
 ddml estimate, robust
 ddml estimate, spec(st) rep(md) notable replay
 ddml estimate, spec(ps) rep(md) notable replay
+
 </details>
 
 The median results from the 11 DML estimations are again similar to the original G-N results. The conclusion is again that their specification is robust to dropping the linearity assumption.
