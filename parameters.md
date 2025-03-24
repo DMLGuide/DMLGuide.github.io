@@ -9,6 +9,8 @@ permalink: /parameters
 
 # Common Target Parameters
 
+DML estimators can estimate a wide range of parameters of interest in economics. These include averages of treatment effects and regression coefficients. Below you will find a selection of commonly encountered target parameters. For each target parameter, we define the variables of interest, the nuisance quantities and the Neyman-orthogonal scores which underlie DML estimations. 
+
 <!----------------------------------------------------------------------------->
 <!-- Treatment Effects -------------------------------------------------------->
 ## Treatment Effects

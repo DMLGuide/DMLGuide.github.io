@@ -1,0 +1,71 @@
+---
+title: "401k"
+author: "Achim Ahrens"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(haven)
+library(ddml)
+dat <- read_dta("http://dmlguide.github.io/assets/dta/PVW_data.dta")
+
+set.seed(20241111)
+
+# Define control variables
+control_names <- c("age", "tw", "inc", "fsize", "db", "marr", 
+                  "twoearn", "pira", "hown")
+
+# Extract variables
+y <- dat$net_tfa
+D <- dat$e401
+X <- as.matrix(dat[, control_names])
+
+# Define model configuration
+learners = list(
+  list(fun = mdl_ranger,
+       args = list(num.trees = 1000, # random forest
+                   max.depth = 8)))
+
+learners_DX = list(
+  list(fun = mdl_ranger,
+       args = list(num.trees = 1000, # random forest
+                   max.depth = 4)))
+
+
+# DML estimation of the PLR coefficient
+plm_fit <- ddml_plm(y, D, X,
+                     learners = learners,
+                     learners_DX = learners_DX,
+                     sample_folds = 10,
+                     ensemble_type = "average"
+                     )
+
+# DML estimation of the ATE 
+ate_fit <- ddml_ate(y, D, X,
+                     learners = learners,
+                     learners_DX = learners_DX,
+                     sample_folds = 10,
+                     ensemble_type = "average",
+                     trim = 0.001
+                    )
+summary(ate_fit)
+
+# create texreg-compatible object from `late_lasso`
+library(texreg)
+ate_texreg <- createTexreg(coef.names="elligibility",
+                              coef=summary(ate_fit)[1],
+                              se=summary(ate_fit)[2],
+                              pvalues=summary(ate_fit)[4]
+                              )
+
+screenreg(list(plm_fit$ols_fit,ate_texreg),
+          include.ci=FALSE,
+          custom.coef.map=list("D_r"="elligibility",
+                               "elligibility"="elligibility") 
+          )
+```

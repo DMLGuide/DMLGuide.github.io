@@ -34,7 +34,7 @@ Z <- dta$assignmt
 X <- model.matrix(~sex*(.),data=dta[,controls])[,-1]
 
 # define estimation formulas
-ols_fm <- as.formula(paste("earnings~assignmt+",paste(controls,collapse="+")))
+ols_fm <- as.formula(paste("earnings~training+",paste(controls,collapse="+")))
 iv_fm <- as.formula(paste("y~D+",paste(colnames(X),collapse="+"),
                           "|Z+",paste(colnames(X),collapse="+")))
 ```
@@ -45,14 +45,13 @@ For reference, we estimate the OLS and TSLS coefficients with and without contro
 
 ```{r cars}
 # estimation
-lm1<-lm_robust(earnings~assignmt,data=dta)
+lm1<-lm_robust(earnings~training,data=dta)
 lm2<-lm_robust(ols_fm,data=dta)  
 iv1<-iv_robust(y~D|Z,data=data.frame(y,D,Z,X))
 iv2<-iv_robust(iv_fm,data=data.frame(y,D,Z,X))
 screenreg(list(lm1,lm2,iv1,iv2),
           include.ci=FALSE,
-          custom.coef.map=list("assignmt"="Assignment",
-                               "training"="Training",
+          custom.coef.map=list("training"="Training",
                                "D"="Training"),
           custom.gof.rows = list("Controls"=c("No","Yes","No","Yes")) 
           )
@@ -82,8 +81,7 @@ screenreg(list(plm_lasso$ols_fit,
                pliv_lasso$iv_fit,
                late_lassoTex),
           custom.coef.map=list("D_r"="training",
-                               "training"="training",
-                               "assignmt"="Assignment"
+                               "training"="training" 
                                ),
           custom.gof.rows=list("Estimator"=c("DML-PLM",
                                               "DML-PLIV",
@@ -104,11 +102,11 @@ learners_multiple <- list(list(fun = ols),
                                          early_stopping_rounds=10)),
                           list(fun = mdl_xgboost,   
                                args = list(nrounds = 800,
-                                         max_depth=5,
+                                         max_depth=2,
                                          early_stopping_rounds=10)),
                           list(fun = mdl_xgboost, 
                                args = list(nrounds = 800,
-                                         max_depth=20,
+                                         max_depth=4,
                                          early_stopping_rounds=10))
                                           )
 
@@ -134,7 +132,23 @@ pliv_multi <- ddml_pliv(y,D,Z,X,
                          sample_folds=5
                          )
 
- 
-summary(fit1)
-fit1$weights
+# create texreg-compatible object from `late_lasso`
+late_multi_lassoTex <- createTexreg(coef.names="training",
+                              coef=summary(late_multi)[1,1],
+                              se=summary(late_multi)[1,2],
+                              pvalues=summary(late_multi)[1,4]
+                              )
+
+screenreg(list(plm_multi$ols_fit[[1]],
+               pliv_multi$iv_fit[[1]],
+               late_multi_lassoTex),
+          custom.coef.map=list("D_r"="training",
+                               "training"="training" 
+                               ),
+          custom.gof.rows=list("Estimator"=c( "DML-PLM",
+                                              "DML-PLIV",
+                                              "DML-LATE"))
+          )
+
+lapply(late_multi$weights,function(x) x[,1,drop=FALSE])
 ```

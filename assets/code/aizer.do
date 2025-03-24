@@ -24,8 +24,6 @@ global X2 $kid  $mom  $match $county10 $state_year $cohortd
 global X3 $kid  $mom  $match $countyd $state_year $cohortd
 global Xall $state $cohortd   $kid  $mom  $match $county10 $countyd  $state_year $cohortd
 
-
-
 **** replication of Table 4, Panel 1, col 1-3
 
 /*
@@ -54,7 +52,7 @@ reg logageatdeath accepted $kid $mom $match $county10 $state_year $cohortd, clus
 eststo m3: ///
 reg logageatdeath accepted $kid $mom $match $countyd $state_year $cohortd, cluster(fips) 
 
-esttab m*  , keep(accepted)
+esttab m1 m2 m3  , keep(accepted)
 
 
 
@@ -100,6 +98,43 @@ global nnetopt hidden_layer_sizes(20 20)
 *** ddml: partially linear model
 
 set seed 123568
+ddml init partial, kfolds(2) // fcluster(fips) // kfolds(10) fcluster(fips) reps(5)
+ddml E[Y|X]: pystacked logageatdeath $Xall 			|| ///
+						m(ols) xvars($X1)    		|| ///
+						m(ols) xvars($X2)    		|| ///
+						m(ols) xvars($X3) 			|| ///
+						m(lassocv)   				|| ///
+						m(ridgecv )   				|| ///
+						m(rf) opt($rflow) 			|| ///
+						m(rf) opt($rfmid) 			|| ///
+						m(rf) opt($rfhigh) 			|| ///
+						m(gradboost) opt($gradlow) 	|| ///
+						m(gradboost) opt($gradmid) 	|| ///
+						m(gradboost) opt($gradhigh) || ///
+						, njobs(8)
+ddml E[D|X]: pystacked accepted $Xall || ///
+						m(logit) xvars($X1) 		|| ///
+						m(logit) xvars($X2) 		|| ///
+						m(logit) xvars($X3) 		|| ///
+						m(lassocv)   				|| ///
+						m(ridgecv )  				|| ///
+						m(rf) opt($rflow) 			|| ///
+						m(rf) opt($rfmid) 			|| ///
+						m(rf) opt($rfhigh) 			|| ///
+						m(gradboost) opt($gradlow) 	|| ///
+						m(gradboost) opt($gradmid) 	|| ///
+						m(gradboost) opt($gradhigh) || ///
+						, njobs(8) type(class)
+ddml crossfit
+eststo d1: ///
+ddml estimate, vce(cluster fips)
+ddml extract, show(pystacked)
+ddml drop
+
+
+*** ddml: partially linear model
+
+set seed 123568
 ddml init partial, kfolds(2) fcluster(fips) // kfolds(10) fcluster(fips) reps(5)
 ddml E[Y|X]: pystacked logageatdeath $Xall 			|| ///
 						m(ols) xvars($X1)    		|| ///
@@ -128,9 +163,11 @@ ddml E[D|X]: pystacked accepted $Xall || ///
 						m(gradboost) opt($gradhigh) || ///
 						, njobs(8) type(class)
 ddml crossfit
+eststo d2: ///
 ddml estimate, vce(cluster fips)
 ddml extract, show(pystacked)
 ddml drop
+
 
 
 *** ddml: interactive model
@@ -163,6 +200,7 @@ ddml E[D|X]: pystacked accepted $Xall 				|| ///
 						m(gradboost) opt($gradhigh) || ///
 						, njobs(8) type(class)
 ddml crossfit
+eststo d3: ///
 ddml estimate, vce(cluster fips) atet
 ddml extract, show(pystacked)
 ddml drop

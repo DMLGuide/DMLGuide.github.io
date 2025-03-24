@@ -1,15 +1,15 @@
 ---
 layout: default
-title: JTPA
+title: The Long-Run Impact of Cash Transfers to Poor Families 
 parent: Examples
 nav_order: 4
 math: true
 description: ""
-permalink: /examples/JTPA
+permalink: /examples/Aizer
 enable_copy_code_button: true
 ---
 
-## Introduction
+## The Long-Run Impact of Cash Transfers to Poor Families 
 
 In this application, we consider the evaluation of the Job Training Partnership Act (JTPA) program.
 The program supported job training for economically disadvantaged individuals in the United States. 
