@@ -1,0 +1,177 @@
+---
+title: "JTPA"
+author: "Achim Ahrens"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In this application, we consider the evaluation of the Job Training Partnership Act (JTPA) program.
+The program supported job training for economically disadvantaged individuals in the United States. 
+The offer of participation in training was randomized, but not all individuals who were offered training actually enrolled.
+
+Due to the self-selection into enrollment, we target the local average treatment effect (LATE) of enrollment.
+Since the training offers were randomized, there is in principle no need to adjust for covariate in the TSLS estimation. 
+However, by adjusting for covariates, we may be able to increase the precision of parameter estimates.
+
+There is one catch: As discussed by [Blandhol, Bonney, Mogstad, & Torgovitsky (2025)](https://a-torgovitsky.github.io/tslslate.pdf), 
+if covariates are present, TSLS might not be *weakly causal* (i.e., be affected by negative weights) and loose its LATE interpretation. DML allows estimating weakly causal parameters, including the LATE, as long as we estimate the nuisance function sufficiently flexibly. See also [Mogstad & Torgovitsky (2024)](https://doi.org/10.1016/bs.heslab.2024.11.003) for discussions. 
+
+The sample considered here covers applications submitted in 1987-1989 and includes 6,102 women and 5,102 men.
+The data is available in Stata format from the
+[Statistical Software Components](http://fmwww.bc.edu/repec/bocode/j/jtpa.dta) (SSC) archive, 
+and was analyzed, among others, by Abadie, Angrist, and Imbens (henceforth AAI; 2002).
+
+## Data preparations
+
+The main variables of interest are:
+
+| Variable | Description |
+| --------- | ----------- |
+| `earnings` | Total earnings over 30 months (Outcome) |
+| `assignmt` | Assignment to training (Encouragement) |
+| `training` | Enrollment in training (Treatment) |
+| `hsorged` | High School Diploma or GED |
+| `black` | Race: Black, non-Hispanic |
+| `hispanic` | Ethnicity: Hispanic |
+| `married` | Married, living with spouse |
+| `wkless13` | Worked less than 13 week in pas |
+| `class_tr` | Service strategy recommended : Classroom training |
+| `ojt_jsa` | Service strategy recommended : OJT/JSA |
+| `age2225` | Age: 22-25 years |
+| `age2629` | Age: 26-29 years |
+| `age3035` |  Age: 30-35 years |
+| `age3644` | Age: 36-44 years |
+| `age4554` | Age: 45-54 years |
+| `f2sms` | Indicator for follow-up survey |
+| `sex` | Sex (Male=1) |
+
+We load the data into R/Stata and define the estimation equations.
+
+```{r cars}
+library("ddml")
+library("haven")
+library("estimatr")
+library("dplyr")
+library("texreg")
+
+# load data
+dta <- read_dta("http://fmwww.bc.edu/repec/bocode/j/jtpa.dta")
+dta <- as.data.frame(dta)
+dta$prevearn_sq <- dta$prevearn^2
+
+# define control variables
+controls <- c("hsorged","black","hispanic","married","wkless13","class_tr",
+              "ojt_jsa","age2225","age2629","age3035","age3644","age4554","f2sms",
+              "prevearn","prevearn_sq","sex")
+
+# define variable objects
+y <- dta$earnings
+D <- dta$training
+Z <- dta$assignmt
+X <- model.matrix(~sex*(.),data=dta[,controls])[,-1]
+
+# define estimation formulas
+ols_fm <- as.formula(paste("earnings~training+",paste(controls,collapse="+")))
+iv_fm <- as.formula(paste("y~D+",paste(colnames(X),collapse="+"),
+                          "|Z+",paste(colnames(X),collapse="+")))
+```
+
+## OLS and TSLS estimates
+
+For reference, we estimate the OLS and TSLS coefficients with and without control variables.
+
+```{r cars}
+# estimation
+lm1<-lm_robust(earnings~training,data=dta)
+lm2<-lm_robust(ols_fm,data=dta)  
+iv1<-iv_robust(y~D|Z,data=data.frame(y,D,Z,X))
+iv2<-iv_robust(iv_fm,data=data.frame(y,D,Z,X))
+screenreg(list(lm1,lm2,iv1,iv2),
+          include.ci=FALSE,
+          custom.coef.map=list("training"="training",
+                               "D"="training"),
+          custom.gof.rows = list("Controls"=c("No","Yes","No","Yes")) 
+          )
+```
+## DML with lasso
+
+We now consider two estimation strategies: First, we estimate the regression parameter
+in the partially linear regression model using DML and Lasso regression. Second, we estimate the LATE parameter
+using the double-robust DML-LATE estimator. We report the partially linear regression 
+coefficient for comparison.
+
+```{r pressure, echo=FALSE}
+plm_lasso <- ddml_plm(y,D,X,
+                       learners=list(what=mdl_glmnet))
+late_lasso <- ddml_late(y,D,Z,X,
+                       learners=list(what=mdl_glmnet))
+pliv_lasso <- ddml_pliv(y,D,Z,X,
+                       learners=list(what=mdl_glmnet))
+
+# create texreg-compatible object from `late_lasso`
+late_lassoTex <- createTexreg(coef.names="training",
+                              coef=summary(late_lasso)[1],
+                              se=summary(late_lasso)[2],
+                              pvalues=summary(late_lasso)[4]
+                              )
+
+screenreg(list(plm_lasso$ols_fit,
+               pliv_lasso$iv_fit,
+               late_lassoTex),
+          custom.coef.map=list("D_r"="training",
+                               "training"="training"
+                               ),
+          custom.gof.rows=list("Estimator"=c("DML-PLM",
+                                              "DML-PLIV",
+                                              "DML-LATE"))
+          )
+```
+
+## DML with multiple learners
+
+```{r}
+learners_multiple <- list(list(fun = ols),
+                          list(fun = mdl_glmnet),
+                          list(fun = mdl_glmnet,
+                               args = list(alpha = 0)),
+                          list(fun = mdl_ranger, 
+                               args = list(num.trees = 500,
+                                           max.depth = 1)),
+                          list(fun = mdl_ranger,  
+                               args = list(num.trees = 500,
+                                           max.depth = 5)),
+                          list(fun = mdl_ranger, 
+                               args = list(num.trees = 500,
+                                           max.depth = 20)),
+                          list(fun = mdl_xgboost,   
+                               args = list(nrounds = 800,
+                                         max_depth=1,
+                                         early_stopping_rounds=10)),
+                          list(fun = mdl_xgboost,   
+                               args = list(nrounds = 800,
+                                         max_depth=5,
+                                         early_stopping_rounds=10)),
+                          list(fun = mdl_xgboost, 
+                               args = list(nrounds = 800,
+                                         max_depth=20,
+                                         early_stopping_rounds=10))
+                                          )
+
+fit1 <- ddml_late(y,
+                 D,
+                 Z,
+                 X,
+                 learners=learners_multiple,
+                 ensemble_type = "nnls",
+                 custom_ensemble_weights = diag(length(learners_multiple)),
+                 shortstack = TRUE
+)
+summary(fit1)
+fit1$weights
+```

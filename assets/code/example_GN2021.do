@@ -3,12 +3,7 @@
 // Comments preceded by // accompany the code.
 // Comments in /* */ are for the website text.
 
-global datafolder C:\LocalStore\ecomes\Heriot-Watt University Team Dropbox\Mark Schaffer\Schaffer\Statadat\CausalML_JEL\GiulianoNunn2021
-global logfolder C:\LocalStore\ecomes\Heriot-Watt University Team Dropbox\Mark Schaffer\Schaffer\Statadat\CausalML_JEL
-
-cap log close
-log using "$logfolder/example_GN2021.txt", replace text
-
+cap cd /Users/kahrens/MyProjects/DMLGuide.github.io/assets
 
 ********************************************************************************
 
@@ -66,12 +61,20 @@ We also reproduce their replication code for Figure 5, which is a simple scatter
 
 */
 
-use "$datafolder/Table1", clear
+*** NOT FOR PUBLICATION ***
+set seed 123
+***************************
+
+cap log close
+log using "logs/example_GN2021.txt", replace text
+
+use "dta/GN2021", clear
 
 // shorten the name of the causal variable of interest to sd_EE
 rename sd_of_gen_mean_temp_anom_EE sd_EE
 
 // replicate results with no controls in Table 1, column (3).
+eststo m0: ///
 reg A198new sd_EE, robust
 
 // replicate Figure 5
@@ -85,9 +88,17 @@ twoway (scatter A198new sd_EE, msymbol(o) mlabel(isocode))			///
 	ytitle("Importance of tradition")								///
 	xtitle("Climatic instability")
 drop hat
+graph export "logs/GN_Figure5.png", replace
 
 // replicate results with controls in Table 1, column (4).
+eststo m1: ///
 reg A198new sd_EE v104_ee settlement_ee polhierarchies_ee loggdp, robust
+
+esttab m0 m1
+estout m0 m1,														///
+	label modelwidth(15) collabels(none)							///
+	cells(b(fmt(3)) se(par fmt(3)))									///
+	varlabels(_cons Constant)
 
 
 /*
@@ -110,6 +121,7 @@ We have no strong priors on whether a linear or non-linear learner is more appro
 Hence we use 3 learners in this example: unregularized OLS, cross-validated Lasso, and a random forest.
 We also use short-stacking to combine the estimated conditional expectations from these 3 learners.
 Short-stacking is computationally cheap, and for the same reason the initial estimation is done once, i.e., we do not resample (re-cross-fit based on a different split).
+In the example below, short-stacking creates an ensemble learner with weights based on non-negative nonlinear least squares (NNLS) where the weights are constrained to lie in the [0,1] interval and to sum to 1.
 
 The dataset is small, and so we choose 10-fold cross-fitting.
 This means that learners are trained on about 66-67 observations, and OOS predictions are obtained for the remaining 7-8 observations.
@@ -163,30 +175,123 @@ ddml desc, learners
 ddml crossfit, shortstack nostdstack
 
 // Step 4: Estimation
-// After Step 3, we have 4 sets of residualized Y and 4 of residualized X,
+// After Step 3, we have 4 sets of residualized Y and 4 of residualized D,
 // based on 4 sets of estimated conditional expectations:
 // one for each of the 3 learners plus one stacked (ensemble) estimate.
 // By default, ddml reports the short-stacked results:
 // the residualized dependent variable Y is regressed on the residualized
-// causal variable of interest X using OLS.
+// causal variable of interest D using OLS.
+// Note that if you execute the code your your results will vary
+// (usually only slightly) because the seed hasn't been set.
 ddml estimate, robust
 
 /*
-The DML short-stacked results are quite close to the original linear specification use by G-N:
-the coefficient is slightly larger, as is the estimated standard error.
+We haven't set the random number seed, so the results will vary based on the randomization of the cross-fit split and any randomization used by the learners.
+But typically the DML short-stacked results are quite close to the original linear specification use by G-N.
 A natural interpretation is that the G-N results still stand in this robustness check.
 
 This does not mean, however, that the linear specification was the "right" choice.
-Inspection of the short-stacking weights shows that almost no weight is placed on unregularized OLS.
-Moreover, the random forest learner gets a substantial weight in both of the conditional expectation estimates.
+Depending on the randomization in the cross-fit split and the learners,
+the short-stacking weights will typically put a low weight on unregularized OLS.
+The random forest learner will also typically get a substantial weight in both of the conditional expectation estimates.
 This suggests that some nonlinearity is present, but that the assumption of linearity does not substantially affect the results.
-
 */
 
 // Display the short-stack weights.
-// Note that unregularized OLS gets a low weight for both Y and D,
-// and the random forest learner gets a substantial weight in both.
 ddml extract, show(ssweights)
+
+/*
+The residualized Y and D can also be inspected and used in other specifications.
+The G-N dataset is very small and we can plot the results as in Figure 5 of the original paper.
+Below we look at scatterplots where the same learner is used for both Y and D.
+But we could also look at combinations, e.g., unregularized OLS for Y and RF for D.
+This is related to a version of stacking sometimes called "single-best", where instead of deriving weights using NNLS, all the weight is put on the learner with the best OOS performance (smallest MSPE).
+*/
+
+// ddml creates conditional expectations for each learner.
+// With pystacked, the learners are numbered.
+// The final "_1" identifies the resample (the single cross-fit split).
+// Create residualized Y and D for each learner.
+cap drop Y_L1_r Y_L2_r Y_L3_r Y_ss_r D_L1_r D_L2_r D_L3_r D_ss_r
+gen Y_L1_r = $Y-Y1_pystacked_L1_1
+gen Y_L2_r = $Y-Y1_pystacked_L2_1
+gen Y_L3_r = $Y-Y1_pystacked_L3_1
+gen Y_ss_r = $Y-Y_A198new_ss_1
+gen D_L1_r = $D-D1_pystacked_L1_1
+gen D_L2_r = $D-D1_pystacked_L2_1
+gen D_L3_r = $D-D1_pystacked_L3_1
+gen D_ss_r = $D-D_sd_EE_ss_1
+
+// 4 specification and scatterplots
+// Y and D learners = OLS
+// We suppress the output for the individual OLS regressions to save space.
+qui reg Y_L1_r D_L1_r, robust
+est store ddml_L1_L1, title("OLS learners")
+cap drop hat_1_1
+predict hat_1_1
+twoway (scatter Y_L1_r D_L1_r, msymbol(o) mlabel(isocode))			///
+	(line hat_1_1 D_L1_r, sort lwidth(thick)),					 	///
+	legend(off)														///
+	xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)					///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Unregularized OLS")								///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability")									///
+	name(OLS, replace)
+// Y and D learners = CV Lasso
+qui reg Y_L2_r D_L2_r, robust
+est store ddml_L2_L2, title("Lasso learners")
+cap drop hat_2_2
+predict hat_2_2
+twoway (scatter Y_L2_r D_L2_r, msymbol(o) mlabel(isocode))			///
+	(line hat_2_2 D_L2_r, sort lwidth(thick)),					 	///
+	legend(off)														///
+	xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)					///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Lasso")											///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability")									///
+	name(Lasso, replace)
+// Y and D learners = Random Forest
+qui reg Y_L3_r D_L3_r, robust
+est store ddml_L3_L3, title("RF learners")
+cap drop hat_3_3
+predict hat_3_3
+twoway (scatter Y_L3_r D_L3_r, msymbol(o) mlabel(isocode))			///
+	(line hat_3_3 D_L3_r, sort lwidth(thick)),					 	///
+	legend(off)														///
+	xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)					///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Random Forest")									///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability")									///
+	name(RF, replace)
+// Y and D learners = Short-stacked (ensemble of OLS, Lasso, RF)
+qui reg Y_ss_r D_ss_r, robust
+est store ddml_SS_SS, title("SS learners")
+cap drop hat_ss_ss
+predict hat_ss_ss
+twoway (scatter Y_ss_r D_ss_r, msymbol(o) mlabel(isocode))			///
+	(line hat_ss_ss D_ss_r, sort lwidth(thick)),				 	///
+	legend(off)														///
+	xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)					///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Short-stacked")									///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability")									///
+	name(SS, replace)
+
+// Compare DML estimations for learner combinations:
+// nb: Code uses estout by Ben Jann; install from SSC Archives.
+estout ddml_L1_L1 ddml_L2_L2 ddml_L3_L3 ddml_SS_SS,					///
+	label modelwidth(15) collabels(none)							///
+	rename (D_L1_r D_r D_L2_r D_r D_L3_r D_r D_ss_r D_r)			///
+	cells(b(fmt(3)) se(par fmt(3)))									///
+	varlabels(_cons Constant)
+
+// Compare via scatterplot:
+graph combine OLS Lasso RF SS
+graph export "images/GN_4learners.png", replace
 
 /*
 The procedure above is suitable for "work-in-progress".
@@ -205,7 +310,6 @@ Standard stacking - stacking separately for each cross-fit estimation - is also 
 "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately).
 
 The example below illustrates.
-
 */
 
 

@@ -19,3 +19,5 @@ vendor/
 .direnv/
 
 .DS_Store
+.Rproj.user
+*.Rproj
