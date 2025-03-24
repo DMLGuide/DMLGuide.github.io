@@ -104,6 +104,8 @@ Linear regression                               Number of obs     =         75
 
 ```
 
+![GN Figure 5](https://dmlguide.github.io/assets/images/GN_Figure5.png "GN Figure 5")
+
 </details>
 
 
@@ -287,9 +289,7 @@ Stacking final estimator: nnls1
 </details>
 
 
-We haven't set the random number seed,[^bhnote] so the results will vary based on the randomization of the cross-fit split and any randomization used by the learners.
-But typically the DML short-stacked results are quite close to the original linear specification use by G-N.
-A natural interpretation is that the G-N results still stand in this robustness check.
+We haven't set the random number seed,[^bhnote] so the results will vary based on the randomization of the cross-fit split and any randomization used by the learners. But typically the DML short-stacked results are quite close to the original linear specification use by G-N. A natural interpretation is that the G-N results still stand in this robustness check.
 
 [^bhnote]: B. Hansen (2022, p. 298) suggests, in the context of the use of the bootstrap, that fixing the seed should be done cautiously and is "an unwise choice for daily calculations" because it leads to the same numerical results and hence a misleading sense of stability. The same argument applies here.
 
@@ -450,6 +450,8 @@ Constant                      -0.020          -0.011           0.010           0
 
 ```
 
+![GN Four learners](https://dmlguide.github.io/assets/images/GN_4learners.png "GN Four learners")
+
 </details>
 
 
@@ -514,6 +516,7 @@ ddml crossfit, shortstack poolstack
 ddml estimate, robust
 ddml estimate, spec(st) rep(md) notable replay
 ddml estimate, spec(ps) rep(md) notable replay
+```
 
 </details>
 
@@ -688,6 +691,7 @@ Again, this is evidence of some nonlinearity, but not enough to overturn the OLS
 <summary>Stata output</summary>
 
 ```
+
 . // Display the stacking weights.
 . // As before, unregularized OLS gets a low weight for both Y and D,
 . // and the random forest learner gets a substantial weight in both.
