@@ -473,7 +473,8 @@ The procedure above is suitable for "work-in-progress".
 > 
 > 1. Set the random number seed(s) for replicability.
 > 2. Consider using multiple cross-fit splits and aggregate them.
-> 3. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.[^2]
+> 3. Check if results are robust to the number of cross-fitting folds.
+> 4. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.[^2]
 
 [^2]: Short-stacking stacking is computationally appealing but there are other options. Standard stacking - stacking separately for each cross-fit estimation - is also a possibility. "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately). See the discussion in [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103).
 
