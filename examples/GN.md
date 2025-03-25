@@ -13,7 +13,9 @@ enable_copy_code_button: true
 
 ## Setting
 
-In this example we illustrate the basic workings of DML using a simple empirical example. The application is drawn from [Giuliano and Nunn (2021)](https://doi.org/10.1093/restud/rdaa074), who look at the relationship between climate instability and cultural persistence using a number of different datasets.
+In this example, we illustrate the basic workings of DML using a simple empirical example. The application is drawn from [Giuliano and Nunn (2021)](https://doi.org/10.1093/restud/rdaa074), who look at the relationship between climate instability and cultural persistence using a number of different datasets.[^1]
+
+[^1]: You can find the full replication code [here](https://github.com/DMLGuide/DMLGuide.github.io/tree/main/assets/code).
 
 Their first estimation is a cross-country regression where the dependent variable, $Y$, is a measure of the importance of tradition taken from the World Values Survey, and the causal variable of interest, $D$, is a measure of ancestral climatic instability. The dataset is quite small: only 74-75 countries.
 
@@ -266,7 +268,7 @@ R output here
 
 </details>
 
-{: .note-title }
+{: .warning }
 > Seed
 >
 > We haven't set the random number seed deliberately here to so that you can re-run the results multiple times and to illustrate how the results will vary based on the randomization of the cross-fit split and any randomization used by the learners. 
@@ -308,6 +310,15 @@ lassocv            2    .41567395    .41567395
 
 <details markdown="block">
 <summary>R code</summary>
+
+```
+R code here
+```
+
+</details>
+
+<details markdown="block">
+<summary>R output</summary>
 
 ```
 R output here
@@ -464,11 +475,11 @@ The procedure above is suitable for "work-in-progress".
 > 
 > 1. Set the random number seed(s) for replicability.
 > 2. Consider using multiple cross-fit splits and aggregate them.
-> 3. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.[^1]
+> 3. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.[^2]
+
+[^2]: Short-stacking stacking is computationally appealing but there are other options. Standard stacking - stacking separately for each cross-fit estimation - is also a possibility. "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately). See the discussion in [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103).
 
 Cross-fitting introduces randomness by using a random split into cross-fit folds. A straightfoward way to reduce the sensitivity of the results to the split is to re-estimate using different cross-fit splits and aggregate the results. Aggregation can use the median or the mean.
-
-[^1]: Short-stacking stacking is computationally appealing but there are other options. Standard stacking - stacking separately for each cross-fit estimation - is also a possibility. "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately). See the discussion in [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103).
 
 The example below illustrates.
 
@@ -627,6 +638,3 @@ R output here
 ```
 
 </details>
-
-{: .note-title }
-> You can find the full replications code [here](https://github.com/DMLGuide/DMLGuide.github.io/tree/main/assets/code).
