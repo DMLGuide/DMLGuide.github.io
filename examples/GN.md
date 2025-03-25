@@ -17,18 +17,10 @@ In this example, we illustrate the basic workings of DML using a simple empirica
 
 Their first estimation is a cross-country regression where the dependent variable, $Y$, is a measure of the importance of tradition taken from the World Values Survey, and the causal variable of interest, $D$, is a measure of ancestral climatic instability. The dataset is quite small: only 74-75 countries.
 
+The example is useful for illustrating how DML works for several reasons: the dataset is small and available online, visualization is easy, reproduction of results is straightforward, and the example shows how DML can be used as a robustness check even in the simplest of settings. The G-N dataset used for this demonstration is available [here](https://dmlguide.github.io/assets/dta/GN2021.dta). 
+
 Giuliano and Nunn (G-N) are concerned about omitted confounders, and include 4 controls to address the issue.
-
-1. distance from the equator;
-2. a proxy for early economic development, proxied by complexity of settlements;
-3. a measure of political centralization;
-4. real per capital GDP in the survey year.
-
-The example is useful for illustrating how DML works for several reasons: the dataset is small and available online, visualization is easy, reproduction of results is straightforward, and the example shows how DML can be used as a robustness check even in the simplest of settings.
-
-The G-N dataset used for this demonstration is available [here](https://dmlguide.github.io/assets/dta/GN2021.dta). 
-
-The variables used are:
+The outcome, treatment and control variables are:
 
 | Variable | Description |
 | ----------- | ----------------|
@@ -148,7 +140,7 @@ The estimation procedure takes the following steps:
 3. Cross-fitting: obtain cross-fit estimates of the two conditional expectations.
 4. Estimation: regress the residualized outcome variable on the residualized causal variable of interest.
 
-We have no strong priors on whether a linear or non-linear learner is more appropriate, or whether regularization is needed at all. Hence we use 3 learners in this example: unregularized OLS, cross-validated Lasso, and a random forest. We also use model averaging to combine the estimated conditional expectations from these 3 learners. Specifically, we use short-stacking which is a computationally cheap and fast way of pairing DML and model averaging (see [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103) for a description of the algorithm and other model averaging strategies). Also to make the example run quickly the initial estimation is done just once, i.e., we do not resample (re-cross-fit based on different splits).
+We have no strong priors on whether a linear or non-linear learner is more appropriate, or whether regularization is needed at all. Hence we use 3 learners in this example: unregularized OLS, cross-validated Lasso, and a random forest. We also use model averaging to combine the estimated conditional expectations from these 3 learners. Specifically, we use short-stacking which is a computationally cheap and fast way of pairing DML and model averaging (see [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103) for a description of the algorithm and other model averaging strategies). Also to make the example run quickly the initial estimation is done just once, i.e., we do not resample (repeat the cross-fit based on different splits).
 
 The dataset is small, and so we choose 10-fold cross-fitting. This means that learners are trained on about 66-67 observations, and OOS predictions are obtained for the remaining 7-8 observations. (If the dataset were larger, we could e.g. use 5-fold cross-fitting and save some computation time.)
 
@@ -267,9 +259,9 @@ R output here
 </details>
 
 {: .warning }
-> Seed
+> **Seed**
 >
-> We haven't set the random number seed deliberately here to so that you can re-run the results multiple times and to illustrate how the results will vary based on the randomization of the cross-fit split and any randomization used by the learners. 
+> We deliberately haven't set the random number seed here to so that you can re-run the results multiple times and to illustrate how the results will vary based on the randomization of the cross-fit split and any randomization used by the learners. 
 
 Typically the DML short-stacked results are quite close to the original linear specification use by G-N. A natural interpretation is that the G-N results still stand in this robustness check. This does not mean, however, that the linear specification was the "right" choice. Depending on the randomization in the cross-fit split and the learners, the short-stacking weights will typically put a low weight on unregularized OLS. The random forest learner will also typically get a substantial weight in both of the conditional expectation estimates. This suggests that some nonlinearity is present, but that the assumption of linearity does not substantially affect the results.
 

@@ -180,7 +180,7 @@ To be added.
 
 ## Double Machine Learning DiD estimation
 
-We move to the DiD estimation. The code uses the same doubly robust score as [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003) to estimate the GT-ATT effects. However, DML uses cross-fitting and allows leveraging nonparametric learners.
+We move to the DML estimation. The code uses the same doubly robust (and Neyman-orthogonal) score as [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003) to estimate the GT-ATT effects. However, DML uses cross-fitting which (in combination with the Neyman-orthogonal score) allows us to leverage nonparametric learners.
 
 <details markdown="block">
 <summary>R code</summary>
