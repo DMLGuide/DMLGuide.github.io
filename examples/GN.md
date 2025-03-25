@@ -396,11 +396,13 @@ Constant                      -0.020          -0.011           0.010           0
 ## Final model
 
 The procedure above is suitable for "work-in-progress".
-For "final" results (e.g., for publication), a researcher should:
 
-1. Set the random number seed(s) for replicability.
-2. Consider using multiple cross-fit splits and aggregate them.
-3. Consider using other stacking methods.
+{: .highlight }
+> For "final" results (e.g., for publication), a researcher should:
+> 
+> 1. Set the random number seed(s) for replicability.
+> 2. Consider using multiple cross-fit splits and aggregate them.
+> 3. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.
 
 Cross-fitting introduces randomness by using a random split into cross-fit folds. A straightfoward way to reduce the sensitivity of the results to the split is to re-estimate using different cross-fit splits and aggregate the results. Aggregation can use the median or the mean.
 
@@ -441,9 +443,8 @@ ddml E[D|X]: pystacked $D $X								///
 								, type(reg)
 
 // Step 3: Cross-fit.
-// Standard stacking is the default behavior of ddml+pystacked.
-// Pooled-stacking is requested separately.
-ddml crossfit, shortstack poolstack
+// We focus on short-stacking for this illustration.
+ddml crossfit, shortstack nostdstack
 
 // Step 4: Estimation.
 // Median-aggregated short-stacked results are reported by default.
@@ -471,47 +472,21 @@ D equations (1):        sd_EE
 
 DDML estimation results:
 spec  r     Y learner     D learner         b        SE 
-  st  1  Y1_pystacked  D1_pystacked    -2.160    (0.784)
   ss  1  [shortstack]          [ss]    -2.326    (0.802)
-  ps  1   [poolstack]          [ps]    -2.366    (0.801)
-  st  2  Y1_pystacked  D1_pystacked    -1.801    (0.771)
   ss  2  [shortstack]          [ss]    -1.907    (0.769)
-  ps  2   [poolstack]          [ps]    -1.865    (0.780)
-  st  3  Y1_pystacked  D1_pystacked    -2.150    (0.737)
   ss  3  [shortstack]          [ss]    -2.141    (0.723)
-  ps  3   [poolstack]          [ps]    -2.189    (0.729)
-  st  4  Y1_pystacked  D1_pystacked    -2.257    (0.808)
   ss  4  [shortstack]          [ss]    -2.058    (0.790)
-  ps  4   [poolstack]          [ps]    -2.094    (0.808)
-  st  5  Y1_pystacked  D1_pystacked    -2.269    (0.796)
   ss  5  [shortstack]          [ss]    -2.265    (0.797)
-  ps  5   [poolstack]          [ps]    -2.268    (0.794)
-  st  6  Y1_pystacked  D1_pystacked    -2.272    (0.762)
   ss  6  [shortstack]          [ss]    -2.108    (0.764)
-  ps  6   [poolstack]          [ps]    -2.142    (0.749)
-  st  7  Y1_pystacked  D1_pystacked    -2.269    (0.734)
   ss  7  [shortstack]          [ss]    -2.252    (0.735)
-  ps  7   [poolstack]          [ps]    -2.255    (0.726)
-  st  8  Y1_pystacked  D1_pystacked    -1.912    (0.715)
   ss  8  [shortstack]          [ss]    -1.892    (0.733)
-  ps  8   [poolstack]          [ps]    -1.940    (0.725)
-  st  9  Y1_pystacked  D1_pystacked    -2.077    (0.758)
   ss  9  [shortstack]          [ss]    -1.941    (0.749)
-  ps  9   [poolstack]          [ps]    -2.030    (0.752)
-  st 10  Y1_pystacked  D1_pystacked    -2.300    (0.714)
   ss 10  [shortstack]          [ss]    -2.231    (0.735)
-  ps 10   [poolstack]          [ps]    -2.240    (0.741)
-  st 11  Y1_pystacked  D1_pystacked    -1.702    (0.783)
   ss 11  [shortstack]          [ss]    -1.911    (0.763)
-  ps 11   [poolstack]          [ps]    -1.951    (0.773)
 
 Mean/med    Y learner     D learner         b        SE 
-  st mn  Y1_pystacked  D1_pystacked    -2.106    (0.782)
   ss mn  [shortstack]          [ss]    -2.094    (0.774)
-  ps mn   [poolstack]          [ps]    -2.122    (0.774)
-  st md  Y1_pystacked  D1_pystacked    -2.160    (0.770)
   ss md  [shortstack]          [ss]    -2.108    (0.767)
-  ps md   [poolstack]          [ps]    -2.142    (0.760)
 
 Shortstack DDML model (median over 11 resamples)
 y-E[y|X]  = y-Y_A198new_ss                         Number of obs   =        74
@@ -520,7 +495,7 @@ D-E[D|X]  = D-D_sd_EE_ss
              |               Robust
      A198new | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-       sd_EE |  -2.108401   .7674987    -2.75   0.006    -3.612671   -.6041314
+       sd_EE |  -2.108401   .7674987    -2.75   0.006    -3.612671   -.6041313
 ------------------------------------------------------------------------------
 Stacking final estimator: nnls1
 

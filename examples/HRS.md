@@ -23,18 +23,18 @@ The variables used are:
 
 | Variable | Description |
 | ----------- | ----------------|
-| `oop_spend` | R1OOPMD:W1 Out of pkt med exp, prv 12 mos|
+| `oop_spend` | Out of pocket medical expenditures prev 12 months|
 | `first_hosp` | First hospitalization |
 | `hhidpn` | Household/person indicator |
 | `wave` | Wave indicator |
-| `ragey_b` | R1AGEY_B:W1 R Age (years) at Ivw BegMon|
+| `ragey_b` | Age in years |
 | `female` | Female indicator |         
 | `black` | Black indicator |          
 | `hispanic` | Hispanic indicator |         
 | `race_other` | Other race |           
 | `hs_grad` | High school graduate |
-| `some_college` | |         
-| `collegeplus` | |       
+| `some_college` | College degree |         
+| `collegeplus` | Higher than college education |       
 
 ## Data and model set-up
 
@@ -134,12 +134,20 @@ dyn_lm <- aggte(attgt_lm, type = "dynamic", bstrap = FALSE)
 
 </details>
 
+<details markdown="block">
+<summary>Stata code</summary>
+
+To be added. 
+
+</details>
+
+
 ## Double Machine Learning DiD estimation
 
 Finally, we 
 
 <details markdown="block">
-<summary>Stata code</summary>
+<summary>R code</summary>
 
 ```
 // In the G-N estimations, GDP is missing for one country.
@@ -150,12 +158,19 @@ drop if loggdp==.
 
 </details>
 
+<details markdown="block">
+<summary>Stata code</summary>
+
+To be added. 
+
+</details>
+
 ## Results
 
 Finally, we prepare a plot to display the results:
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R output</summary>
 
 ```
 . // Step 1: Specify the model.
@@ -163,3 +178,11 @@ Finally, we prepare a plot to display the results:
 ```
 
 </details>
+
+<details markdown="block">
+<summary>Stata output</summary>
+
+To be added. 
+
+</details>
+
