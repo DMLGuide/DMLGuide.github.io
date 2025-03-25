@@ -52,7 +52,7 @@ library("did")
 library(ddml)
 library(readr)
 
-dat <- read_csv("/Users/kahrens/MyProjects/DMLGuide.github.io/assets/dta/HRS_long.csv")
+dat <- read_csv("https://dmlguide.github.io/assets/dta/HRS_long.csv")
 
 # Learners for E[Y|D=0,X] estimation
 learners = list(
