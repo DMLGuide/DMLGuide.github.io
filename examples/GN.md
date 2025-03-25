@@ -13,9 +13,7 @@ enable_copy_code_button: true
 
 ## Setting
 
-In this example, we illustrate the basic workings of DML using a simple empirical example. The application is drawn from [Giuliano and Nunn (2021)](https://doi.org/10.1093/restud/rdaa074), who look at the relationship between climate instability and cultural persistence using a number of different datasets.[^1]
-
-[^1]: You can find the full replication code [here](https://github.com/DMLGuide/DMLGuide.github.io/tree/main/assets/code).
+In this example, we illustrate the basic workings of DML using a simple empirical example. The application is drawn from [Giuliano and Nunn (2021)](https://doi.org/10.1093/restud/rdaa074), who look at the relationship between climate instability and cultural persistence using a number of different datasets.
 
 Their first estimation is a cross-country regression where the dependent variable, $Y$, is a measure of the importance of tradition taken from the World Values Survey, and the causal variable of interest, $D$, is a measure of ancestral climatic instability. The dataset is quite small: only 74-75 countries.
 
