@@ -1,6 +1,6 @@
 ---
 layout: default
-title: The Long-Run Impact of Cash Transfers to Poor Families 
+#title: The Long-Run Impact of Cash Transfers to Poor Families 
 parent: Examples
 nav_order: 4
 math: true

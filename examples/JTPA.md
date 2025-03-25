@@ -1,6 +1,6 @@
 ---
 layout: default
-title: JTPA
+#title: JTPA
 parent: Examples
 nav_order: 4
 math: true
@@ -15,9 +15,7 @@ In this application, we consider the evaluation of the Job Training Partnership 
 The program supported job training for economically disadvantaged individuals in the United States. 
 The offer of participation in training was randomized, but not all individuals who were offered training actually enrolled.
 
-Due to the self-selection into enrollment, we target the local average treatment effect (LATE) of enrollment.
-Since the training offers were randomized, there is in principle no need to adjust for covariate in the TSLS estimation. 
-However, by adjusting for covariates, we may be able to increase the precision of parameter estimates.
+Due to the self-selection into enrollment, we target the local average treatment effect (LATE) of enrollment. Since the training offers were randomized, there is in principle no need to adjust for covariate in the TSLS estimation. However, by adjusting for covariates, we may be able to increase the precision of parameter estimates.
 
 There is one catch: As discussed by [Blandhol, Bonney, Mogstad, & Torgovitsky (2025)](https://a-torgovitsky.github.io/tslslate.pdf), 
 if covariates are present, TSLS might not be *weakly causal* (i.e., be affected by negative weights) and loose its LATE interpretation. DML allows estimating weakly causal parameters, including the LATE, as long as we estimate the nuisance function sufficiently flexibly. See also [Mogstad & Torgovitsky (2024)](https://doi.org/10.1016/bs.heslab.2024.11.003) for discussions. 

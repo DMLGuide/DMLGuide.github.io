@@ -24,19 +24,20 @@ dta$prevearn_sq <- dta$prevearn^2
 
 # define control variables
 controls <- c("hsorged","black","hispanic","married","wkless13","class_tr",
-              "ojt_jsa","age2225","age2629","age3035","age3644","age4554","f2sms",
-              "prevearn","prevearn_sq","sex")
+              "ojt_jsa",#"age2225","age2629","age3035","age3644","age4554",
+              "age","f2sms",
+              "prevearn","sex")
 
 # define variable objects
 y <- dta$earnings
 D <- dta$training
 Z <- dta$assignmt
-X <- model.matrix(~sex*(.),data=dta[,controls])[,-1]
+X <- model.matrix(~.,data=dta[,controls])[,-1]
 
 # define estimation formulas
 ols_fm <- as.formula(paste("earnings~training+",paste(controls,collapse="+")))
-iv_fm <- as.formula(paste("y~D+",paste(colnames(X),collapse="+"),
-                          "|Z+",paste(colnames(X),collapse="+")))
+iv_fm <- as.formula(paste("y~D+",paste(controls,collapse="+"),
+                          "|Z+",paste(controls,collapse="+")))
 ```
 
 ## OLS and TSLS estimates
@@ -53,21 +54,25 @@ screenreg(list(lm1,lm2,iv1,iv2),
           include.ci=FALSE,
           custom.coef.map=list("training"="Training",
                                "D"="Training"),
-          custom.gof.rows = list("Controls"=c("No","Yes","No","Yes")) 
+          custom.gof.rows = list("Controls"=c("No","Yes","No","Yes"),
+                                 "Estimator"=c("OLS","OLS","IV","IV")
+                                 ) 
           )
 ```
 ## DML with lasso
 
 
 ```{r pressure, echo=FALSE}
-plm_lasso <- ddml_plm(y,Z,X,
-                       sample_folds=5,
+set.seed(432)
+
+plm_lasso <- ddml_plm(y,D,X,
+                       sample_folds=10,
                        learners=list(what=mdl_glmnet))
-late_lasso <- ddml_late(y,D,Z,X,
-                        sample_folds=5,
-                        learners=list(what=mdl_glmnet))
 pliv_lasso <- ddml_pliv(y,D,Z,X,
-                        sample_folds=5,
+                        sample_folds=10,
+                        learners=list(what=mdl_glmnet))
+late_lasso <- ddml_late(y,D,Z,X,
+                        sample_folds=10,
                         learners=list(what=mdl_glmnet))
  
 # create texreg-compatible object from `late_lasso`
@@ -85,7 +90,8 @@ screenreg(list(plm_lasso$ols_fit,
                                ),
           custom.gof.rows=list("Estimator"=c("DML-PLM",
                                               "DML-PLIV",
-                                              "DML-LATE"))
+                                              "DML-LATE"),
+                               "Nuisance estimator"=rep("CV-lasso",3))
           )
 ```
 
@@ -115,21 +121,21 @@ plm_multi <- ddml_plm(y,Z,X,
                        ensemble_type = "nnls",
                        custom_ensemble_weights = diag(length(learners_multiple)),
                        shortstack = TRUE,
-                       sample_folds=5
+                       sample_folds=2
                        )
 late_multi <- ddml_late(y,D,Z,X,
                        learners=learners_multiple,
                        ensemble_type = "nnls",
                        custom_ensemble_weights = diag(length(learners_multiple)),
                        shortstack = TRUE,
-                       sample_folds=5
+                       sample_folds=2
                        )
 pliv_multi <- ddml_pliv(y,D,Z,X,
                          learners=learners_multiple,
                          ensemble_type = "nnls",
                          custom_ensemble_weights = diag(length(learners_multiple)),
                          shortstack = TRUE,
-                         sample_folds=5
+                         sample_folds=2
                          )
 
 # create texreg-compatible object from `late_lasso`
