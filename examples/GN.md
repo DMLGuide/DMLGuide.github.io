@@ -118,6 +118,24 @@ N                      75              74
 
 </details>
 
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R output here
+```
+
+</details>
+
+<details markdown="block">
+<summary>R output</summary>
+
+```
+R output here
+```
+
+</details>
+
 
 ## DML as a robustness check
 
@@ -230,6 +248,24 @@ Stacking final estimator: nnls1
 
 </details>
 
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R code here
+```
+
+</details>
+
+<details markdown="block">
+<summary>R output</summary>
+
+```
+R output here
+```
+
+</details>
+
 {: .note-title }
 > Seed
 >
@@ -270,6 +306,14 @@ lassocv            2    .41567395    .41567395
 
 </details>
 
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R output here
+```
+
+</details>
 
 ## Results by learner
 
@@ -393,11 +437,29 @@ Constant                      -0.020          -0.011           0.010           0
 
 </details>
 
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R here
+```
+
+</details>
+
+<details markdown="block">
+<summary>R output</summary>
+
+```
+R output here
+```
+
+</details>
+
 ## Final model
 
 The procedure above is suitable for "work-in-progress".
 
-{: .highlight }
+{: .important }
 > For "final" results (e.g., for publication), a researcher should:
 > 
 > 1. Set the random number seed(s) for replicability.
@@ -449,6 +511,15 @@ ddml crossfit, shortstack nostdstack
 // Step 4: Estimation.
 // Median-aggregated short-stacked results are reported by default.
 ddml estimate, robust
+```
+
+</details>
+
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R here
 ```
 
 </details>
@@ -506,6 +577,15 @@ Summary over 11 resamples:
 
 </details>
 
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R output here
+```
+
+</details>
+
 The median results from the 11 DML estimations are again similar to the original G-N results. The conclusion is again that their specification is robust to dropping the linearity assumption.
 
 Note that the variation across the 11 refits introduced by the randomization of the cross-fit split is not trivial - the DML coefficient estimates range from about -1.7 to about -2.3 - but not enough to overturn the conclusion above. Increasing the number of refits is worth considering here.
@@ -535,6 +615,15 @@ final stacking estimator: nnls1
     ols            1    1.490e-18            0            0    3.209e-18            0    6.072e-18    3.326e-18    1.502e-18            0            0    2.277e-18            0
 lassocv            2    .33170229    .37136168    .34520346    .32768056    .27627495     .3283087    .38245886    .40774365    .37568256    .26729688    .30843848    .25827545
      rf            3    .66829771    .62863832    .65479654    .67231944    .72372505     .6716913    .61754114    .59225635    .62431744    .73270312    .69156152    .74172455
+```
+
+</details>
+
+<details markdown="block">
+<summary>R output</summary>
+
+```
+R output here
 ```
 
 </details>
