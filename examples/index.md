@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Applications
+title: Examples
 nav_order: 3
 math: true
 description: "A collection of double/debiased machine learning examples."
