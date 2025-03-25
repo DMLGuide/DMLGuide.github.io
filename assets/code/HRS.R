@@ -1,23 +1,4 @@
----
-title: "HRS"
-author: "Achim Ahrens"
-date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
+ 
 #library(haven)
 #library(readr)
 #df <- read_dta("/Users/kahrens/Downloads/HRS_long.dta")
@@ -31,18 +12,17 @@ When you click the **Knit** button a document will be generated that includes bo
 #  filter(age_hosp <= 59)
 #write_csv(dat,"/Users/kahrens/MyProjects/DMLGuide.github.io/assets/dta/HRS_long.csv")
 #dat <- read_csv("/Users/kahrens/MyProjects/DMLGuide.github.io/assets/dta/HRS_long.csv")
-```
-
+ 
 ## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
+ 
 # Hard-coded hyperparameters
 library("did")
 #devtools::install_github("thomaswiemann/did",ref="dev-ddml")
 library(ddml)
 library(readr)
+library(dplyr)
+library(ggplot2)
+
 
 dat <- read_csv("/Users/kahrens/MyProjects/DMLGuide.github.io/assets/dta/HRS_long.csv")
 
@@ -50,42 +30,40 @@ dat <- read_csv("/Users/kahrens/MyProjects/DMLGuide.github.io/assets/dta/HRS_lon
 learners = list(
   list(fun = ols),
   list(fun = mdl_glmnet,
-      args = list(alpha = 1)),
+       args = list(alpha = 1)),
   list(fun = mdl_glmnet,
        args = list(alpha = 0)),
   list(fun = mdl_ranger,
-      args = list(num.trees = 1000, # random forest, high regularization
-                  min.node.size = 100)),
+       args = list(num.trees = 1000, # random forest, high regularization
+                   min.node.size = 100)),
   list(fun = mdl_ranger,
-      args = list(num.trees = 1000, # random forest, medium regularization
-                  min.node.size = 10)),
+       args = list(num.trees = 1000, # random forest, medium regularization
+                   min.node.size = 10)),
   list(fun = mdl_ranger,
-      args = list(num.trees = 1000, # random forest, low regularization
-                  min.node.size = 1)))
+       args = list(num.trees = 1000, # random forest, low regularization
+                   min.node.size = 1)))
 
 # Hard-code learners for treatment reduced-form
 learners_DX = list(
   list(fun = mdl_glm,
-      args = list(family = "binomial")),
+       args = list(family = "binomial")),
   list(fun = mdl_glmnet,
-      args = list(family = "binomial", # logit-lasso
-                  alpha = 1)),
+       args = list(family = "binomial", # logit-lasso
+                   alpha = 1)),
   list(fun = mdl_glmnet,
-      args = list(family = "binomial", # logit-ridge
-                  alpha = 0)),
+       args = list(family = "binomial", # logit-ridge
+                   alpha = 0)),
   list(fun = mdl_ranger,
-      args = list(num.trees = 1000, # random forest, high regularization
-                  min.node.size = 100)),
+       args = list(num.trees = 1000, # random forest, high regularization
+                   min.node.size = 100)),
   list(fun = mdl_ranger,
-      args = list(num.trees = 1000, # random forest, medium regularization
-                  min.node.size = 10)),
+       args = list(num.trees = 1000, # random forest, medium regularization
+                   min.node.size = 10)),
   list(fun = mdl_ranger,
-      args = list(num.trees = 1000, # random forest, low regularization
-                  min.node.size = 1)))
-```
+       args = list(num.trees = 1000, # random forest, low regularization
+                   min.node.size = 1)))
 
 
-```{r pressure, echo=FALSE}
 attgt_0 <- att_gt(yname = "oop_spend",
                   gname = "first_hosp",
                   idname = "hhidpn",
@@ -95,10 +73,9 @@ attgt_0 <- att_gt(yname = "oop_spend",
                   data = dat,
                   bstrap=FALSE)
 dyn_0 <- aggte(attgt_0, type = "dynamic", bstrap = FALSE)
-```
 
 
-```{r pressure, echo=FALSE}
+
 attgt_lm <- att_gt(yname = "oop_spend",
                    gname = "first_hosp",
                    idname = "hhidpn",
@@ -135,18 +112,13 @@ attgt_dml <- att_gt(yname = "oop_spend",
                     trim = 0.001,
                     silent=FALSE)
 dyn_dml <- aggte(attgt_dml, type = "dynamic", bstrap = FALSE)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-```{r pressure, echo=FALSE}
-library(dplyr)
-library(ggplot2)
 res <- bind_rows(
-          data.frame(egt=dyn_dml$egt,att=dyn_dml$att.egt,se=dyn_dml$se.egt,estimator="DiD-DML"),
-          data.frame(egt=dyn_lm$egt,att=dyn_lm$att.egt,se=dyn_lm$se.egt,estimator="With controls"),
-          data.frame(egt=dyn_0$egt,att=dyn_0$att.egt,se=dyn_0$se.egt,estimator="Without controls")
-          ) 
+  data.frame(egt=dyn_dml$egt,att=dyn_dml$att.egt,se=dyn_dml$se.egt,estimator="DiD-DML"),
+  data.frame(egt=dyn_lm$egt,att=dyn_lm$att.egt,se=dyn_lm$se.egt,estimator="With controls"),
+  data.frame(egt=dyn_0$egt,att=dyn_0$att.egt,se=dyn_0$se.egt,estimator="Without controls")
+) 
 res |>
   ggplot() +
   geom_pointrange(aes(x=egt,y=att,
@@ -154,4 +126,3 @@ res |>
                       color=estimator),position=position_dodge(width=0.2)) +
   geom_hline(yintercept=0,linetype="dashed") 
 ggsave("/Users/kahrens/MyProjects/DMLGuide.github.io/assets/images/HRS.png")
-```
