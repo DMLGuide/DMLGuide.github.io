@@ -15,7 +15,7 @@ permalink: /resources
 
 ## Software implementing DML
 
-- `ddml` for Stata by Wiemann, Ahrens, Hansen, Schaffer (2024).
+- `ddml` for Stata by Ahrens, Hansen, Schaffer, Wiemann (2024). 
     - [Package tutorials](https://statalasso.github.io/)
     - Ahrens A, Hansen C B, Schaffer M E, Wiemann T (2024). ddml: Double/debiased machine learning in Stata. *Stata Journal*. 24(1): 3-45. [https://doi.org/10.1177/1536867X2412336](https://doi.org/10.1177/1536867X2412336)
 - `ddml` for R by Wiemann, Ahrens, Hansen, Schaffer (2024).

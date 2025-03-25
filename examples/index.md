@@ -9,4 +9,4 @@ permalink: /examples
 
 # Examples
 
-This is a directory that links to all examples, possibly categorizing them
+This is a directory that links to all examples.

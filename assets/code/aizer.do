@@ -20,7 +20,7 @@ global cohortd "BY2-BY26"
 global det "year yob childageyears datemiss numkids  maxage minage length_name widow divorced husbandaway marst_miss famearn miss nmatches keepssn ageatdeath2 logageatdeath"
 global det2 "year yob childageyears datemiss numkids  maxage minage length_name widow divorced husbandaway marst_miss famearn miss nmatches"
 global X1 $state $cohortd 
-global X2 $kid  $mom  $match $county10 $state_year $cohortd
+global X2 $kid  $mom  $match $couAizernty10 $state_year $cohortd
 global X3 $kid  $mom  $match $countyd $state_year $cohortd
 global Xall $state $cohortd   $kid  $mom  $match $county10 $countyd  $state_year $cohortd
 
@@ -129,7 +129,7 @@ ddml crossfit
 eststo d1: ///
 ddml estimate, vce(cluster fips)
 ddml extract, show(pystacked)
-ddml drop
+//ddml drop
 
 
 *** ddml: partially linear model

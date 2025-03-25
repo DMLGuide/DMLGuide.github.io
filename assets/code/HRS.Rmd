@@ -95,7 +95,10 @@ attgt_0 <- att_gt(yname = "oop_spend",
                   data = dat,
                   bstrap=FALSE)
 dyn_0 <- aggte(attgt_0, type = "dynamic", bstrap = FALSE)
+```
 
+
+```{r pressure, echo=FALSE}
 attgt_lm <- att_gt(yname = "oop_spend",
                    gname = "first_hosp",
                    idname = "hhidpn",
