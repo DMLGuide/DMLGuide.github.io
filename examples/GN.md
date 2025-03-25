@@ -464,11 +464,11 @@ The procedure above is suitable for "work-in-progress".
 > 
 > 1. Set the random number seed(s) for replicability.
 > 2. Consider using multiple cross-fit splits and aggregate them.
-> 3. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.
+> 3. Validate the choice of machine learner, e.g., by inspecting cross-validate loss measures or through model averaging approaches such as short-stacking.[^1]
 
 Cross-fitting introduces randomness by using a random split into cross-fit folds. A straightfoward way to reduce the sensitivity of the results to the split is to re-estimate using different cross-fit splits and aggregate the results. Aggregation can use the median or the mean.
 
-Short-stacking stacking is computationally appealing but there are other options. Standard stacking - stacking separately for each cross-fit estimation - is also a possibility. "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately).
+[^1]: Short-stacking stacking is computationally appealing but there are other options. Standard stacking - stacking separately for each cross-fit estimation - is also a possibility. "Pooled stacking" is similar to standard stacking except that the weights for combining learners are based on the OOS predictions for the entire sample (rather than for each cross-fit fold separately). See the discussion in [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103).
 
 The example below illustrates.
 
@@ -511,15 +511,6 @@ ddml crossfit, shortstack nostdstack
 // Step 4: Estimation.
 // Median-aggregated short-stacked results are reported by default.
 ddml estimate, robust
-```
-
-</details>
-
-<details markdown="block">
-<summary>R code</summary>
-
-```
-R here
 ```
 
 </details>
@@ -573,6 +564,15 @@ Stacking final estimator: nnls1
 Summary over 11 resamples:
        D eqn      mean       min       p25       p50       p75       max
        sd_EE     -2.0937   -2.3256   -2.2521   -2.1084   -1.9105   -1.8915
+```
+
+</details>
+
+<details markdown="block">
+<summary>R code</summary>
+
+```
+R here
 ```
 
 </details>
