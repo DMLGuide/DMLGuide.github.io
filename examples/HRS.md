@@ -2,7 +2,7 @@
 layout: default
 title: Dynamic Effects on Hospitalization
 parent: Examples
-nav_order: 4
+nav_order: 33
 math: true
 description: ""
 permalink: /examples/HRS
@@ -15,7 +15,7 @@ enable_copy_code_button: true
 
 We follow [Dobkin et al (2018)](https://www.aeaweb.org/articles?id=10.1257/aer.20161038) in estimating the causal effect of hospital admissions on out-of-pocket medical spendings.[^bhnote] This application is instructive in that it illustrates how DML can be used for difference-in-difference analyses. The analysis of Dobkin et al. (2018) was reconsidered by [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) to showcast their proposed DiD estimator. 
 
-[^bhnote]: The full data is available from the [OpenICPSR repository](https://www.openicpsr.org/openicpsr/project/116186/version/V1/view?path=/openicpsr/116186/fcr:versions/V1&type=project). We consider here the subset of the data that that was also considered by Sun Abraham.
+[^bhnote]: The full data is available from the [OpenICPSR repository](https://www.openicpsr.org/openicpsr/project/116186/version/V1/view?path=/openicpsr/116186/fcr:versions/V1&type=project). We consider here the subset of the data that that was also considered by Sun & Abraham (2021).
 
 The illustration here is a simplified version of the analysis presented in Section 5 of our review paper. For the full replication code, see our replication repository (Link to be added).
 
@@ -40,10 +40,10 @@ The variables used are:
 
 We begin by loading the data, and specifying settings for a number of nuisance function estimators that we will use below. 
 
-Note that for the DiD analyses to run in R, you will need to install a modified version of the original `did` package by Callaway & Santa'Anna.
-
 <details markdown="block">
 <summary>R code</summary>
+
+Note that for the DiD analyses to run in R, you will need to install a modified version of the original `did` package by Callaway & Santa'Anna.
 
 ```
 # Hard-coded hyperparameters
@@ -96,7 +96,10 @@ learners_DX = list(
 
 ## DiD estimation with parametric nuisance functions
 
-Next, we employ the Callway & Sant'Anna estimator of group-time average treatment effects (GT-ATT) with and without any controls. Each GT-ATT corresponds to the ATT of a hospitalization on out-of-pocket medical spending at time $g$ observed at time $t$. These GT-ATT are then aggregated to yield dynamic effects measured up to two periods before and after treatment onset. To adjust for covariates, we use doubly robust DiD estimator and assume that the nuisance functions are parameteric (an assumption that we will relax when employing DML).
+Next, we employ the Callway & Sant'Anna estimator of group-time average treatment effects (GT-ATT). Each GT-ATT corresponds to the ATT of a hospitalization occuring at time $g$ on out-of-pocket medical spending at time $g$.
+We also consider the [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003) estimator that adjust for covariates using a doubly robust scores. Unlike DML, their estimator does not employ sample-splitting and assumes that the nuisance functions follow a parameteric form.
+
+The GT-ATT estimates are then aggregated to obtain dynamic effects for up to two periods before and after the treatment onsets.  
 
 <details markdown="block">
 <summary>R code</summary>
@@ -135,25 +138,72 @@ dyn_lm <- aggte(attgt_lm, type = "dynamic", bstrap = FALSE)
 </details>
 
 <details markdown="block">
+<summary>R output</summary>
+
+```
+> attgt_0 
+
+Call:
+att_gt(yname = "oop_spend", tname = "wave", idname = "hhidpn", 
+    gname = "first_hosp", xformla = NULL, data = dat, control_group = "notyettreated", 
+    bstrap = FALSE)
+
+Reference: Callaway, Brantly and Pedro H.C. Sant'Anna.  "Difference-in-Differences with Multiple Time Periods." Journal of Econometrics, Vol. 225, No. 2, pp. 200-230, 2021. <https://doi.org/10.1016/j.jeconom.2020.12.001>, <https://arxiv.org/abs/1803.09015> 
+
+Group-Time Average Treatment Effects:
+ Group Time  ATT(g,t) Std. Error [95% Pointwise  Conf. Band]  
+     8    8 3028.6250   913.4765       1238.2440    4819.006 *
+     8    9 1247.6922   860.7461       -439.3392    2934.724  
+     8   10  800.1065  1007.5356      -1174.6271    2774.840  
+     9    8 -169.9604  1128.4012      -2381.5861    2041.665  
+     9    9 3324.3702   958.7806       1445.1947    5203.546 *
+     9   10  106.8378   650.6511      -1168.4149    1382.091  
+    10    8   37.8749  1403.3889      -2712.7167    2788.467  
+    10    9 -410.5810  1027.0575      -2423.5767    1602.415  
+    10   10 3091.5084   995.4291       1140.5031    5042.514 *
+---
+Signif. codes: `*' confidence band does not cover 0
+
+P-value for pre-test of parallel trends assumption:  0.94949
+Control Group:  Not Yet Treated,  Anticipation Periods:  0
+Estimation Method:  Doubly Robust
+```
+
+</details>
+
+<details markdown="block">
 <summary>Stata code</summary>
 
 To be added. 
 
 </details>
 
-
 ## Double Machine Learning DiD estimation
 
-Finally, we 
+We move to the DiD estimation. The code uses the same doubly robust score as [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003) to estimate the GT-ATT effects. However, DML uses cross-fitting and allows leveraging nonparametric learners.
 
 <details markdown="block">
 <summary>R code</summary>
 
 ```
-// In the G-N estimations, GDP is missing for one country.
-// For simplicity, we just drop this one country so that it is never used.
-drop if loggdp==.
-
+attgt_dml <- att_gt(yname = "oop_spend",
+                    gname = "first_hosp",
+                    idname = "hhidpn",
+                    tname = "wave",
+                    control_group = "notyettreated",
+                    xformla = ~ ragey_b+female+black+
+                      hispanic+race_other+hs_grad+some_college+collegeplus,
+                    data = dat,
+                    bstrap=FALSE,
+                    est_method = "ddml",
+                    learners=learners,
+                    learners_DX=learners_DX,
+                    ensemble_type="nnls",
+                    sample_folds=15,
+                    shortstack=TRUE,
+                    trim = 0.001,
+                    silent=FALSE)
+dyn_dml <- aggte(attgt_dml, type = "dynamic", bstrap = FALSE)
 ```
 
 </details>
@@ -170,17 +220,28 @@ To be added.
 Finally, we prepare a plot to display the results:
 
 <details markdown="block">
-<summary>R output</summary>
+<summary>R results</summary>
 
 ```
-. // Step 1: Specify the model.
-
+res <- bind_rows(
+  data.frame(egt=dyn_dml$egt,att=dyn_dml$att.egt,se=dyn_dml$se.egt,estimator="DiD-DML"),
+  data.frame(egt=dyn_lm$egt,att=dyn_lm$att.egt,se=dyn_lm$se.egt,estimator="With controls"),
+  data.frame(egt=dyn_0$egt,att=dyn_0$att.egt,se=dyn_0$se.egt,estimator="Without controls")
+) 
+res |>
+  ggplot() +
+  geom_pointrange(aes(x=egt,y=att,
+                      ymin=att-1.96*se,ymax=att+1.96*se,
+                      color=estimator),position=position_dodge(width=0.2)) +
+  geom_hline(yintercept=0,linetype="dashed") 
 ```
+
+![HRS results](https://dmlguide.github.io/assets/images/HRS.png "HRS results")
 
 </details>
 
 <details markdown="block">
-<summary>Stata output</summary>
+<summary>Stata results</summary>
 
 To be added. 
 

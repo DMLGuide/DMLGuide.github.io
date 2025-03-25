@@ -26,6 +26,11 @@ library(ggplot2)
 
 dat <- read_csv("/Users/kahrens/MyProjects/DMLGuide.github.io/assets/dta/HRS_long.csv")
 
+
+################################################################################
+###### model setting                                                      ######
+################################################################################
+
 # Learners for E[Y|D=0,X] estimation
 learners = list(
   list(fun = ols),
@@ -64,6 +69,10 @@ learners_DX = list(
                    min.node.size = 1)))
 
 
+################################################################################
+###### estimations                                                        ######
+################################################################################
+
 attgt_0 <- att_gt(yname = "oop_spend",
                   gname = "first_hosp",
                   idname = "hhidpn",
@@ -73,8 +82,6 @@ attgt_0 <- att_gt(yname = "oop_spend",
                   data = dat,
                   bstrap=FALSE)
 dyn_0 <- aggte(attgt_0, type = "dynamic", bstrap = FALSE)
-
-
 
 attgt_lm <- att_gt(yname = "oop_spend",
                    gname = "first_hosp",
@@ -91,7 +98,7 @@ attgt_lm <- att_gt(yname = "oop_spend",
                                            args = list(family = binomial))),
                    type = "average",
                    trim = 0.001)
-dyn_lm <- aggte(attgt_lm, type = "dynamic", bstrap = FALSE)
+dyn_lm <- aggte(attgt_lm, type = "dynamic", bstrap = FALSE, na.rm=TRUE)
 dyn_lm
 
 attgt_dml <- att_gt(yname = "oop_spend",
@@ -113,6 +120,10 @@ attgt_dml <- att_gt(yname = "oop_spend",
                     silent=FALSE)
 dyn_dml <- aggte(attgt_dml, type = "dynamic", bstrap = FALSE)
 
+
+################################################################################
+###### plotting.                                                          ######
+################################################################################
 
 res <- bind_rows(
   data.frame(egt=dyn_dml$egt,att=dyn_dml$att.egt,se=dyn_dml$se.egt,estimator="DiD-DML"),
