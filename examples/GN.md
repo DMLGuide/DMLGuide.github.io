@@ -412,7 +412,7 @@ graph combine OLS Lasso RF SS
 </details>
 
 <details markdown="block">
-<summary>Stata output (to be added)</summary>
+<summary>Stata output</summary>
 
 ```
 . // Compare DML estimations for learner combinations:
