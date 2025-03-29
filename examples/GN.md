@@ -13,7 +13,7 @@ enable_copy_code_button: true
 
 ## Setting
 
-In this example, we illustrate the basic workings of DML using a simple empirical example. The application is drawn from [Giuliano and Nunn (2021)](https://doi.org/10.1093/restud/rdaa074), who look at the relationship between climate instability and cultural persistence using a number of different datasets.
+In this example, we illustrate DML estimation of the partially linear model using a simple empirical example. The application is drawn from [Giuliano and Nunn (2021)](https://doi.org/10.1093/restud/rdaa074), who look at the relationship between climate instability and cultural persistence using a number of different datasets.
 
 Their first estimation is a cross-country regression where the dependent variable, $Y$, is a measure of the importance of tradition taken from the World Values Survey, and the causal variable of interest, $D$, is a measure of ancestral climatic instability. The dataset is quite small: only 74-75 countries.
 
@@ -111,7 +111,7 @@ N                      75              74
 </details>
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R code (to be added)</summary>
 
 ```
 R output here
@@ -120,7 +120,7 @@ R output here
 </details>
 
 <details markdown="block">
-<summary>R output</summary>
+<summary>R output (to be added)</summary>
 
 ```
 R output here
@@ -241,7 +241,7 @@ Stacking final estimator: nnls1
 </details>
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R code (to be added)</summary>
 
 ```
 R code here
@@ -250,7 +250,7 @@ R code here
 </details>
 
 <details markdown="block">
-<summary>R output</summary>
+<summary>R output (to be added)</summary>
 
 ```
 R output here
@@ -299,7 +299,7 @@ lassocv            2    .41567395    .41567395
 </details>
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R code (to be added)</summary>
 
 ```
 R code here
@@ -308,7 +308,7 @@ R code here
 </details>
 
 <details markdown="block">
-<summary>R output</summary>
+<summary>R output (to be added)</summary>
 
 ```
 R output here
@@ -412,7 +412,7 @@ graph combine OLS Lasso RF SS
 </details>
 
 <details markdown="block">
-<summary>Stata output</summary>
+<summary>Stata output (to be added)</summary>
 
 ```
 . // Compare DML estimations for learner combinations:
@@ -439,7 +439,7 @@ Constant                      -0.020          -0.011           0.010           0
 </details>
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R code (to be added)</summary>
 
 ```
 R here
@@ -448,7 +448,7 @@ R here
 </details>
 
 <details markdown="block">
-<summary>R output</summary>
+<summary>R output (to be added)</summary>
 
 ```
 R output here
@@ -571,7 +571,7 @@ Summary over 11 resamples:
 </details>
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R code (to be added)</summary>
 
 ```
 R here
@@ -580,7 +580,7 @@ R here
 </details>
 
 <details markdown="block">
-<summary>R code</summary>
+<summary>R code (to be added)</summary>
 
 ```
 R output here
@@ -622,7 +622,7 @@ lassocv            2    .33170229    .37136168    .34520346    .32768056    .276
 </details>
 
 <details markdown="block">
-<summary>R output</summary>
+<summary>R output (to be added)</summary>
 
 ```
 R output here

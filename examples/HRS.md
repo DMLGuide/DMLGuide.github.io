@@ -13,11 +13,11 @@ enable_copy_code_button: true
 
 ## Setting
 
-We follow [Dobkin et al (2018)](https://www.aeaweb.org/articles?id=10.1257/aer.20161038) in estimating the causal effect of hospital admissions on out-of-pocket medical spendings.[^bhnote] This application is instructive in that it illustrates how DML can be used for difference-in-difference analyses. The analysis of Dobkin et al. (2018) was reconsidered by [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) to showcast their proposed DiD estimator. 
+We follow [Dobkin et al. (2018)](https://www.aeaweb.org/articles?id=10.1257/aer.20161038) in estimating the causal effect of hospital admissions on out-of-pocket medical spendings.[^bhnote] This application is instructive in that it illustrates how DML can be used for difference-in-difference analyses. The analysis of [Dobkin et al. (2018)](https://www.aeaweb.org/articles?id=10.1257/aer.20161038) was reconsidered by [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) to illustrate their proposed DiD estimator. 
 
 [^bhnote]: The full data is available from the [OpenICPSR repository](https://www.openicpsr.org/openicpsr/project/116186/version/V1/view?path=/openicpsr/116186/fcr:versions/V1&type=project). We consider here the subset of the data that that was also considered by Sun & Abraham (2021).
 
-The illustration here is a simplified version of the analysis presented in Section 5 of our review paper. For the full replication code, see our replication repository (Link to be added).
+The demonstration here is a simplified version of the analysis presented in Section 5 of our review paper. For the full replication code, see our replication repository **(Link to be added)**.
 
 The variables used are:
 
@@ -38,7 +38,7 @@ The variables used are:
 
 ## Data and model set-up
 
-We begin by loading the data, and specifying settings for a number of nuisance function estimators that we will use below. 
+We begin by loading the data, and specifying settings for a number of nuisance function estimators that we will use below. We consider OLS/logit as parametric reference specifications, (logistic) lasso and ridge, and three random forest learners.
 
 <details markdown="block">
 <summary>R code</summary>
@@ -96,8 +96,7 @@ learners_DX = list(
 
 ## DiD estimation with parametric nuisance functions
 
-Next, we employ the Callway & Sant'Anna estimator of group-time average treatment effects (GT-ATT). Each GT-ATT corresponds to the ATT of a hospitalization occuring at time $g$ on out-of-pocket medical spending at time $g$.
-We also consider the [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003) estimator that adjust for covariates using a doubly robust scores. Unlike DML, their estimator does not employ sample-splitting and assumes that the nuisance functions follow a parameteric form.
+For comparison, we employ the Callway & Sant'Anna estimator of group-time average treatment effects (GT-ATT). Each GT-ATT corresponds to the ATT of a hospitalization occuring at time $g$ on out-of-pocket medical spending at time $t$. We also consider the [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003) estimator that adjust for covariates using a doubly robust scores. Unlike DML, their estimator does not employ sample-splitting and assumes that the nuisance functions follow a parameteric form.
 
 The GT-ATT estimates are then aggregated to obtain dynamic effects for up to two periods before and after the treatment onsets.  
 
@@ -114,6 +113,7 @@ attgt_0 <- att_gt(yname = "oop_spend",
                   xformla = NULL,
                   data = dat,
                   bstrap=FALSE)
+# Aggregation
 dyn_0 <- aggte(attgt_0, type = "dynamic", bstrap = FALSE)
 
 # With controls
@@ -132,6 +132,7 @@ attgt_lm <- att_gt(yname = "oop_spend",
                                            args = list(family = binomial))),
                    type = "average",
                    trim = 0.001)
+# Aggregation
 dyn_lm <- aggte(attgt_lm, type = "dynamic", bstrap = FALSE)
 ```
 
@@ -172,7 +173,7 @@ Estimation Method:  Doubly Robust
 </details>
 
 <details markdown="block">
-<summary>Stata code</summary>
+<summary>Stata code (to be added)</summary>
 
 To be added. 
 
@@ -209,7 +210,7 @@ dyn_dml <- aggte(attgt_dml, type = "dynamic", bstrap = FALSE)
 </details>
 
 <details markdown="block">
-<summary>Stata code</summary>
+<summary>Stata code (to be added)</summary>
 
 To be added. 
 
@@ -241,7 +242,7 @@ res |>
 </details>
 
 <details markdown="block">
-<summary>Stata results</summary>
+<summary>Stata results (to be added)</summary>
 
 To be added. 
 

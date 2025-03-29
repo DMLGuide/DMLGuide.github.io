@@ -1,0 +1,264 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/kahrens/MyProjects/DMLGuide.github.io/assets/logs/example_401k.txt
+  log type:  text
+ opened on:  29 Mar 2025, 20:23:37
+
+. 
+. which ddml
+/Users/kahrens/Library/Application Support/Stata/ado/plus/d/ddml.ado
+*! ddml v1.4.4
+*! last edited: 30aug2024
+*! authors: aa/ms
+
+. 
+. set seed 123
+
+. 
+. use "https://dmlguide.github.io/assets/dta/PVW_data.dta", clear 
+
+. 
+. global Y net_tfa
+
+. global X age tw inc fsize db marr twoearn pira hown
+
+. global D p401
+
+. global Z e401
+
+. 
+. *** partial regression coefficient 
+. ddml init partial, kfolds(10)
+
+. ddml E[Y|X]: pystacked $Y $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(8))
+Learner Y1_pystacked added successfully.
+
+. ddml E[D|X]: pystacked $Z $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(4))
+Learner D1_pystacked added successfully.
+
+. ddml crossfit
+Cross-fitting E[y|X] equation: net_tfa
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+Cross-fitting E[D|X] equation: e401
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+
+. eststo m1: ///
+> ddml estimate, robust
+
+
+Model:                  partial, crossfit folds k=10, resamples r=1
+Mata global (mname):    m0
+Dependent variable (Y): net_tfa
+ net_tfa learners:      Y1_pystacked
+D equations (1):        e401
+ e401 learners:         D1_pystacked
+
+DDML estimation results:
+spec  r     Y learner     D learner         b        SE 
+   1  1  Y1_pystacked  D1_pystacked  7139.823  (888.524)
+
+DDML model
+y-E[y|X]  = y-Y1_pystacked_1                       Number of obs   =      9915
+D-E[D|X]  = D-D1_pystacked_1 
+------------------------------------------------------------------------------
+             |               Robust
+     net_tfa | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        e401 |   7139.823   888.5238     8.04   0.000     5398.348    8881.297
+       _cons |  -58.85368   355.5077    -0.17   0.869    -755.6361    637.9287
+------------------------------------------------------------------------------
+
+
+. 
+. *** ATE coefficient
+. ddml init partial, kfolds(10)
+warning - model m0 already exists
+all existing model results and variables will
+be dropped and model m0 will be re-initialized
+
+. ddml E[Y|X]: pystacked $Y $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(8))
+Learner Y1_pystacked added successfully.
+
+. ddml E[D|X]: pystacked $Z $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(4))
+Learner D1_pystacked added successfully.
+
+. ddml crossfit
+Cross-fitting E[y|X] equation: net_tfa
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+Cross-fitting E[D|X] equation: e401
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+
+. eststo m2: ///
+> ddml estimate, robust
+
+
+Model:                  partial, crossfit folds k=10, resamples r=1
+Mata global (mname):    m0
+Dependent variable (Y): net_tfa
+ net_tfa learners:      Y1_pystacked
+D equations (1):        e401
+ e401 learners:         D1_pystacked
+
+DDML estimation results:
+spec  r     Y learner     D learner         b        SE 
+   1  1  Y1_pystacked  D1_pystacked  7146.969  (868.904)
+
+DDML model
+y-E[y|X]  = y-Y1_pystacked_1                       Number of obs   =      9915
+D-E[D|X]  = D-D1_pystacked_1 
+------------------------------------------------------------------------------
+             |               Robust
+     net_tfa | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        e401 |   7146.969   868.9045     8.23   0.000     5443.947     8849.99
+       _cons |  -3.272787   342.6999    -0.01   0.992    -674.9523    668.4067
+------------------------------------------------------------------------------
+
+
+. 
+. esttab m1 m2
+
+--------------------------------------------
+                      (1)             (2)   
+                  net_tfa         net_tfa   
+--------------------------------------------
+e401               7139.8***       7147.0***
+                   (8.04)          (8.23)   
+
+_cons              -58.85          -3.273   
+                  (-0.17)         (-0.01)   
+--------------------------------------------
+N                    9915            9915   
+--------------------------------------------
+t statistics in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. 
+. *** partial IV regression coefficient 
+. ddml init iv, kfolds(10)
+warning - model m0 already exists
+all existing model results and variables will
+be dropped and model m0 will be re-initialized
+
+. ddml E[Y|X]: pystacked $Y $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(8))
+Learner Y1_pystacked added successfully.
+
+. ddml E[D|X]: pystacked $D $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(4))
+Learner D1_pystacked added successfully.
+
+. ddml E[Z|X]: pystacked $Z $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(4))
+Learner Z1_pystacked added successfully.
+
+. ddml crossfit
+Cross-fitting E[y|X] equation: net_tfa
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+Cross-fitting E[D|X] equation: p401
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+Cross-fitting E[Z|X]: e401
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+
+. eststo m3: ///
+> ddml estimate, robust
+
+
+Model:                  iv, crossfit folds k=10, resamples r=1
+Mata global (mname):    m0
+Dependent variable (Y): net_tfa
+ net_tfa learners:      Y1_pystacked
+D equations (1):        p401
+ p401 learners:         D1_pystacked
+Z equations (1):        e401
+ e401 learners:         Z1_pystacked
+
+DDML estimation results:
+spec  r     Y learner     D learner         b        SE      Z learner
+   1  1  Y1_pystacked  D1_pystacked 10033.957 (1246.130)  Z1_pystacked
+
+DDML model
+y-E[y|X]  = y-Y1_pystacked_1                       Number of obs   =      9915
+D-E[D|X]  = D-D1_pystacked_1 
+Z-E[Z|X]  = Z-Z1_pystacked_1 
+------------------------------------------------------------------------------
+             |               Robust
+     net_tfa | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        p401 |   10033.96    1246.13     8.05   0.000     7591.588    12476.33
+       _cons |   -28.0459   340.0578    -0.08   0.934    -694.5469    638.4551
+------------------------------------------------------------------------------
+
+
+. 
+. *** LATE coefficient
+. ddml init interactiveiv, kfolds(10)
+warning - model m0 already exists
+all existing model results and variables will
+be dropped and model m0 will be re-initialized
+
+. ddml E[Y|X,Z]: pystacked $Y $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(8))
+Learner Y1_pystacked added successfully.
+
+. ddml E[D|X,Z]: pystacked $D $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(4))
+Learner D1_pystacked added successfully.
+
+. ddml E[Z|X]: pystacked $Z $X , type(reg) methods(rf) cmdopt1(n_estimators(1000) max_depth(4))
+Learner Z1_pystacked added successfully.
+
+. ddml crossfit
+Cross-fitting E[y|X,Z] equation: net_tfa
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+Cross-fitting E[D|X,Z] equation: p401
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+Cross-fitting E[Z|X]: e401
+Cross-fitting fold 1 2 3 4 5 6 7 8 9 10 ...completed cross-fitting
+
+. eststo m4: ///
+> ddml estimate, robust
+
+
+Model:                  interactiveiv, crossfit folds k=10, resamples r=1
+Mata global (mname):    m0
+Dependent variable (Y): net_tfa
+ net_tfa learners:      Y1_pystacked
+D equations (1):        p401
+ p401 learners:         D1_pystacked
+Z equations (1):        e401
+ e401 learners:         Z1_pystacked
+
+DDML estimation results (LATE):
+spec  r  Y(0) learner  Y(1) learner  D(0) learner  D(1) learner         b        SE      Z learner
+   1  1  Y1_pystacked  Y1_pystacked  D1_pystacked  D1_pystacked  9244.338 (1142.991)  Z1_pystacked
+
+DDML model (LATE)
+E[y|X,Z=0]   = Y1_pystacked0_1                     Number of obs   =      9915
+E[y|X,Z=1]   = Y1_pystacked1_1
+E[D|X,Z=0]   = D1_pystacked0_1
+E[D|X,Z=1]   = D1_pystacked1_1
+E[Z|X]       = Z1_pystacked_1
+------------------------------------------------------------------------------
+             |               Robust
+     net_tfa | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        p401 |   9244.338   1142.991     8.09   0.000     7004.116    11484.56
+------------------------------------------------------------------------------
+
+
+. 
+. esttab m3 m4
+
+--------------------------------------------
+                      (1)             (2)   
+                  net_tfa         net_tfa   
+--------------------------------------------
+p401              10034.0***       9244.3***
+                   (8.05)          (8.09)   
+
+_cons              -28.05                   
+                  (-0.08)                   
+--------------------------------------------
+N                    9915            9915   
+--------------------------------------------
+t statistics in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. 
+. cap log close

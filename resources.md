@@ -22,10 +22,10 @@ permalink: /resources
     - [Package vignette](https://thomaswiemann.com/ddml/)
 - `DoubleML` for R and Python. 
     - The [package website](https://docs.doubleml.org/) provides extensive tutorials. 
-    - Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2022). DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python. *Journal of Machine Learning Research*. 23(53): 1-6, https://www.jmlr.org/papers/v23/21-0862.html.
+    - Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2022). DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python. *Journal of Machine Learning Research*. 23(53): 1-6, [https://www.jmlr.org/papers/v23/21-0862.html](https://www.jmlr.org/papers/v23/21-0862.html).
     - Bach, P., Chernozhukov, V., Kurz, M. S., Spindler, M. and Klaassen, S. (2024), DoubleML - An Object-Oriented Implementation of Double Machine Learning in R. *Journal of Statistical Software*. 108(3): 1-56. [https://www.jstatsoft.org/article/view/v108i03](https://www.jstatsoft.org/article/view/v108i03)
 - `EconML` for Python, see [module website](https://econml.azurewebsites.net/) 
-- `CausalELM` for Julia includes a DML program, see [module website](https://dscolby.github.io/CausalELM.jl/stable/)
+- `CausalELM` for Julia includes a DML program, see [website](https://dscolby.github.io/CausalELM.jl/stable/)
 
 ## Other online tutorials
 
@@ -47,7 +47,7 @@ permalink: /resources
 
 ## Other references
 
-Ahrens, A., Hansen, C.B., Schaffer, M.E. and Wiemann, T. (2025). Model Averaging and Double Machine Learning. *Journal of Applied Econometrics*. https://doi.org/10.1002/jae.3103
+Ahrens, A., Hansen, C.B., Schaffer, M.E. and Wiemann, T. (2025). Model Averaging and Double Machine Learning. *Journal of Applied Econometrics*. [https://doi.org/10.1002/jae.3103](https://doi.org/10.1002/jae.3103)
 
 Ahrens A, Hansen C B, Schaffer M E, Wiemann T (2024). ddml: Double/debiased machine learning in Stata. *Stata Journal*. 24(1), 3-45. [https://doi.org/10.1177/1536867X2412336](https://doi.org/10.1177/1536867X2412336)
 

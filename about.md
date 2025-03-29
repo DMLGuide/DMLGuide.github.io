@@ -27,4 +27,8 @@ permalink: /about
 [Thomas Wiemann](https://thomaswiemann.com/), 
 *University of Chicago*
 
+&nbsp;
+&nbsp;
+&nbsp;
+
 *Last edited: March 2025*
