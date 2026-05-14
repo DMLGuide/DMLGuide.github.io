@@ -1,0 +1,15 @@
+project:
+  type: default
+  output-dir: ../examples
+
+execute:
+  freeze: auto
+  echo: false
+  warning: false
+  message: false
+
+format:
+  gfm:
+    preserve-yaml: true
+    output-ext: md
+    wrap: preserve
