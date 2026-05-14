@@ -1,0 +1,133 @@
+---
+format:
+  gfm:
+    preserve-yaml: false
+    output-file: Monopsony_DML.md
+    title-block-style: none
+---
+```{=markdown}
+---
+layout: default
+title: Monopsony I — Simple DDML
+parent: Examples
+nav_order: 34
+math: true
+description: "DDML applied to examine monopsony power on MTurk."
+permalink: /examples/Monopsony_DML
+enable_copy_code_button: true
+---
+```
+
+```{r setup}
+#| include: false
+library(knitr)
+library(modelsummary)
+
+models <- readRDS("results_entry1.rds")
+```
+
+# Monopsony I — Using DDML to examine monopsony power.
+
+*This is Part 1 of a series of three posts, which complement Section 6 in the paper. The companion scripts are available at LINK.*
+
+How much monopsony power does an online platform give to the firms that post jobs there? To answer this question Dube, Jacobs, Naidu and Suri (2020) estimate the elasticity of labor supply using Amazon Mechanical Turk (MTurk). 
+
+MTurk is a marketplace for short, online tasks called HITs (Human Intelligence Tasks), e.g., labelling images, transcribing audio, filling out surveys. A recruiter posts a HIT, sets a reward in dollars, and waits for workers to claim and complete it. We want to measure how the speed of acceptance responds to the posted reward, holding the task itself fixed: a HIT that is accepted quickly when the reward rises reveals elastic labor supply. Following Dube et al. (2020), we summarise this with the partial regression coefficient of log duration on log reward. Its negative is the labor-supply elasticity faced by the recruiter.
+
+We discuss this application in three blog entries: Part 1 illustrates a simple DDML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings. Part 3 stress-tests the result (more folds, construction, different learners, stacking, multi-seed aggregation).
+
+## 1. Model and identification
+
+The estimating equation is the partially linear model that Dube et al. (2020) build on:
+
+$$
+\underbrace{\log(\text{duration}_i)}_{Y_i} \;=\; \theta_0 \cdot \underbrace{\log(\text{reward}_i)}_{D_i} \;+\; g_0(X_i) \;+\; \varepsilon_i,
+\qquad E[\varepsilon_i \mid X_i, D_i] = 0.
+$$
+
+where:
+
+- $Y_i$ is the log time it takes for HIT $i$ to be accepted;
+- $D_i$ is the log reward posted by the recruiter;
+- $X_i$ collects task-level controls.
+
+Under the conditional mean-independence assumption above, $-\theta_0$ is interpretable as the labor supply elasticity faced by the recruiter. A small $\lvert\theta_0\rvert$ — that is, when workers indifferent to reward conditional on the task — indicates that recruiters have monopsony power.
+
+MTurk tasks differ in length, complexity, qualification requirements, recruiter reputation, and content (e.g., a 30-second image label versus a 20-minute transcription). Conditioning on $X$ is thus crucial being able to assign a meaningful interpretation to $-\theta_0$. Since tasks differ in many characteristics, this is not a trivial task.
+
+## 2. Data and controls
+
+The sample is the cross-section of HITs compiled by [Ipeirotis (2010)](https://archive.nyu.edu/handle/2451/29801), which is one of the datasets analyzed in Dube et al. (2020). One row is one HIT group (a batch of identical tasks posted by one recruiter).
+
+In this first part, we only consider hand-engineered controls. Part 2 incorporates unstructured text using fine-tuned embeddings.
+
+The hand-coded controls fall into four blocks:
+
+- **Task design and pricing.** Allotted time per HIT, the number of HITs in the batch (first/last/max), how many have already been completed at observation, the recruiter's rate of completed HITs, indicators for time mentioned in the title/keywords.
+- **Qualifications and access.** Indicators for whether the recruiter requires a qualification (and how long that requirement is), the number of distinct qualifications required, approval-rate and approval-count thresholds, custom-qualification flag, location restrictions (e.g. US-only).
+- **Recruiter aggregates.** Log average reward and log average duration across all of the recruiter's other HITs.
+- **Task content.** Binarised bag-of-words indicators for keywords/title/description tokens, plus Gadiraju task-category dummies (image labelling, transcription, survey, etc.) — these are the cheap, ad-hoc representation of the task text that Entry 2 will replace with DeBERTa embeddings.
+
+We perform minimal data processing: continuous variables are `log(1+x)` transformed and top-1% winsorised if they are right-skewed counts; other variables with concentrated distributions are dichotomized or discretized into a small set of indicators. 
+
+## 3. Estimation
+
+We start with a simple nuisance learner: linear lasso (`mdl_glmnet` with `alpha = 1`). The penalty $\lambda$ is selected by `cv.glmnet`'s default cross-validation.
+
+We use $K = 3$ cross-fitting folds, constructed at the recruiter level, i.e., all HITs from the same `requester_id` are kept in the same fold. This respects the dependence structure of the data and matches the cluster-robust SE convention.  
+
+```r
+set.seed(42)
+
+lasso_spec <- list(
+  what = mdl_glmnet,
+  args = list(alpha = 1)
+)
+
+fit <- ddml_plm(
+  y = y, D = D, X = X, # X = hand-coded controls only
+  learners         = lasso_spec,
+  sample_folds     = 3,
+  cluster_variable = dat$requester_id  
+)
+summary(fit)
+```
+
+A note for usage of `ddml`: passing `cluster_variable` does two things at once. It tells `ddml_plm` to keep each recruiter's HITs together when constructing folds (so that no recruiter is "leaked" across the train/predict split), and it switches the standard error to cluster-robust on the same variable.
+
+## 4. Result
+
+```{r tbl-result}
+#| echo: false
+#| results: asis
+#| tbl-cap: "Coefficient on log(reward). Cluster-robust SE by requester_id in parentheses."
+modelsummary(
+  models,
+  coef_map  = c("log_reward" = "log(reward)"),
+  gof_map   = list(
+    list(raw = "nobs", clean = "n",        fmt = 0),
+    list(raw = "K",    clean = "K",        fmt = 0),
+    list(raw = "r2_y", clean = "R²(Y|X)",  fmt = 3),
+    list(raw = "r2_d", clean = "R²(D|X)",  fmt = 3)
+  ),
+  fmt       = 3,
+  statistic = "std.error",
+  output    = "html"
+)
+```
+
+The cross-fitted $R^2$ values are diagnostic: they tell us how predictable the outcome and the treatment are from the hand-coded controls. With CV-lasso on the hand-coded block alone, $R^2(Y \mid X)$ sits in the high-60s and $R^2(D \mid X)$ in the low-70s. The standard error on $\hat\theta_0$ is correspondingly large, and the point estimate is statistically indistinguishable from zero.  
+
+## 5. Next steps
+
+In this application, we can rely on the work of previous authors that generated hand-coded variables that proxy for task characteristics and complexity. However, it is common to encounter unstructured data in the form of texts or images. [Monopsony II]({{ '/examples/Monopsony_Finetune' | relative_url }}) adds fine-tuned DeBERTa embeddings to $X$ and re-runs the same cross-fit; [Monopsony III]({{ '/examples/Monopsony_Robustness' | relative_url }}) stress-tests the result against alternative fold constructions, learner choices, and seed aggregation.
+
+## 6. References
+
+- Ahrens, A., V. Chernozhukov, C. Hansen, D. Kozbur, M. Schaffer and T. Wiemann. *An Introduction to Double/Debiased Machine Learning.* (Working paper, this site.)
+- Ahrens, A., C. B. Hansen, M. E. Schaffer, and T. Wiemann (2024). [`ddml`: Double/Debiased machine learning in R.](https://doi.org/10.18637/jss.v108.i03)
+- Chernozhukov, V., D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey, and J. Robins (2018). [Double/Debiased machine learning for treatment and structural parameters.](https://doi.org/10.1111/ectj.12097)
+- Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).
+- Ipeirotis, P. G. (2010). [Analyzing the Amazon Mechanical Turk marketplace.](https://archive.nyu.edu/handle/2451/29801)
+
+Continue: [**Monopsony II — fine-tuned text embeddings**]({{ '/examples/Monopsony_Finetune' | relative_url }}) · [**Monopsony III — robustness**]({{ '/examples/Monopsony_Robustness' | relative_url }}).
