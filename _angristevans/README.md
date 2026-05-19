@@ -61,7 +61,7 @@ The raw block is emitted verbatim. A final `awk` step in the Makefile strips any
 
 - `estimator ∈ {"tsls", "ddml"}`
 - `spec ∈ {"structural", "first_stage"}`
-- `learner` — `"ols"` for 2SLS; `"nnls"` for the DDML short-stack; `"custom_1"..."custom_5"` for the five single learners in the order of `make_learner_specs()`: 1 = OLS, 2 = Lasso, 3 = Ridge, 4 = XGBoost(lr = .01), 5 = XGBoost(lr = .03).
+- `learner` — `"ols"` for 2SLS; `"nnls"` for the DDML short-stack; `"custom_1"..."custom_4"` for the four single learners in the order of `make_learner_specs()`: 1 = Lasso, 2 = Ridge, 3 = XGBoost(lr = .01), 4 = XGBoost(lr = .03).
 - `constraint ∈ {TRUE, FALSE}` — whether the no-interaction restriction was imposed (block-structured polynomial dictionary for lasso/ridge + `interaction_constraints` for XGBoost).
 - `instr ∈ {"observed", "fake"}` — the instrument flavor used for the row. `prepare_data()` populates the *data-frame* column `instr` (the actual $Z$ vector) on each call: `samesex` for `observed` and `agem1 + educm + Uniform(0,1)` for `fake`. The `instr` column in `res` is the flavor *label*, not the $Z$ values.
 - `estimate`, `std.error`, `conf.low`, `conf.high`, `statistic`, `term`, `yvar`.

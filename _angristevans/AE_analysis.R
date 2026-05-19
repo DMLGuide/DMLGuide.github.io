@@ -70,16 +70,15 @@ make_learner_specs <- function(constraint=TRUE,base_idx,poly_idx) {
                      nthread = 1L, 
                      interaction_constraints = list(c(1,3:8),c(2:8)))
     ll <- list(
-      list(what = ols, assign_X = base_idx),  
-      list(what = mdl_glmnet, 
-            args = list(alpha = 1, cv = TRUE), 
+      list(what = mdl_glmnet,
+            args = list(alpha = 1, cv = TRUE),
             assign_X = poly_idx),
-      list(what = mdl_glmnet, 
+      list(what = mdl_glmnet,
             args = list(alpha = 0, cv = TRUE),
             assign_X = poly_idx),
       list(what = mdl_xgboost, args = xgb_args1, assign_X = base_idx),
       list(what = mdl_xgboost, args = xgb_args2, assign_X = base_idx)
-      ) 
+      )
   } else {
     # no constraint: allow all interactions, so use the full X_full matrix for all learners.
     xgb_args1 <- list(nrounds = 500L, 
@@ -89,11 +88,10 @@ make_learner_specs <- function(constraint=TRUE,base_idx,poly_idx) {
                      learning_rate = 0.03, 
                      nthread = 1L)
     ll <- list(
-        list(what = ols, assign_X = base_idx),   
         list(what = mdl_glmnet, args = list(alpha = 1, cv = TRUE)),
         list(what = mdl_glmnet, args = list(alpha = 0, cv = TRUE)),
-        list(what = mdl_xgboost, args = xgb_args1, assign_X = base_idx),  
-        list(what = mdl_xgboost, args = xgb_args2, assign_X = base_idx)  
+        list(what = mdl_xgboost, args = xgb_args1, assign_X = base_idx),
+        list(what = mdl_xgboost, args = xgb_args2, assign_X = base_idx)
     )
   }
   return(ll)

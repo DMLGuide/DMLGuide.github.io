@@ -36,7 +36,11 @@ ALGO_TEX  := algorithm_flowchart.tex
 ALGO_PDF  := algorithm_flowchart.pdf
 ALGO_PNG  := $(FIG_DIR)/crossfit_algorithm.png
 
-FIGURES   := $(ALGO_PNG)
+BASIC_TEX := algorithm_flowchart_basic.tex
+BASIC_PDF := algorithm_flowchart_basic.pdf
+BASIC_PNG := $(FIG_DIR)/crossfit_basic.png
+
+FIGURES   := $(ALGO_PNG) $(BASIC_PNG)
 
 BLOG1_R   := blog1_wo_embed.R
 BLOG2_R   := blog2_w_embed.R
@@ -92,6 +96,13 @@ $(ALGO_PNG): $(ALGO_PDF)
 	@mkdir -p $(FIG_DIR)
 	$(PDFTOPPM) -png -r $(PNG_DPI) -singlefile $(ALGO_PDF) $(basename $(ALGO_PNG))
 
+$(BASIC_PDF): $(BASIC_TEX)
+	$(PDFLATEX) -interaction=nonstopmode $(BASIC_TEX) > /dev/null
+
+$(BASIC_PNG): $(BASIC_PDF)
+	@mkdir -p $(FIG_DIR)
+	$(PDFTOPPM) -png -r $(PNG_DPI) -singlefile $(BASIC_PDF) $(basename $(BASIC_PNG))
+
 # --- Quarto renders ---
 render: $(BLOG1_MD) $(BLOG2_MD) $(BLOG3_MD)
 
@@ -99,7 +110,7 @@ render: $(BLOG1_MD) $(BLOG2_MD) $(BLOG3_MD)
 # block (an artefact of the suppressed title block). Jekyll requires the
 # `---` front-matter delimiter on line 1, so we strip leading blank lines
 # after each render.
-$(BLOG1_MD): $(BLOG1_QMD) $(BLOG1_OUT)
+$(BLOG1_MD): $(BLOG1_QMD) $(BLOG1_OUT) $(BASIC_PNG)
 	$(QUARTO) render $(BLOG1_QMD)
 	sed -i '' '/./,$$!d' $(BLOG1_MD)
 
@@ -119,5 +130,5 @@ blog3: $(BLOG3_MD)
 clean:
 	rm -f $(BLOG1_OUT) $(BLOG2_OUT) $(BLOG3_OUT)
 	rm -f $(FIGURES)
-	rm -f *.aux *.log $(ALGO_PDF)
+	rm -f *.aux *.log $(ALGO_PDF) $(BASIC_PDF)
 	rm -rf _freeze .quarto

@@ -11,31 +11,48 @@ enable_copy_code_button: true
 
 # Machine Labor — DDML for the Angrist & Evans IV
 
-The classical study of [Angrist & Evans (1998)](https://doi.org/10.1257/aer.88.3.450) estimates the effect of a third child on maternal labor supply using the instrument `samesex`, an indicator for the first two children sharing a sex. The rationale for using `samesex` is that same-sex parents are modestly more likely to have a third child, but — conditional on the sex of the first child and the sex of the second child — `samesex` is plausibly unrelated to the mother’s labor market outcomes.
+The classical study of [Angrist & Evans (1998)](https://doi.org/10.1257/aer.88.3.450) estimates the effect of a third child on maternal labor supply using the instrument `samesex`, an indicator for the first two children sharing a sex. The rationale is that parents whose first two children share a sex are modestly more likely to have a third child, but — conditional on the sex of each of the first two children — `samesex` is plausibly unrelated to the mother’s labor-market outcomes.
 
-[Angrist & Frandsen (2022)](https://doi.org/10.1086/717933) revisit this same application in their article *Machine Labor* and ask whether ML can be used to estimate the first stage of two-stage least squares.
+[Angrist & Frandsen (2022)](https://doi.org/10.1086/717933) revisit this application in *Machine Labor* and ask whether machine learning can be used inside the first stage of two-stage least squares. They show that it can go badly: with random forests, the second-stage effect of a third child becomes imprecisely estimated, and a placebo check using a signal-free fake instrument yields spurious results.
 
-They show that it can go badly: the random forests they consider discover the `boy1st * boy2nd` interaction inside the first-stage function $E[Z \mid X]$. As a consequence, the residualized instrument collapses to noise, and the second-stage coefficient becomes uninformative. They conclude that ML is “ill-suited” for instrumental variables in this application.
+This post shows that the failure of ML generated instruments is not fundamental. With nuisance estimators that respect the identifying restrictions of the design, DDML reproduces the 2SLS point estimate on the real instrument and correctly refuses to find signal using placebo instruments.
 
-The identification assumption that makes 2SLS work is that `boy1st` and `boy2nd` enter additively, not interactively, in the first stage. This assumption is implied by the linear regression model and enforced by least squares.
+## The identification issue
 
-We show below that we can encode the additivity assumption into ML algorithms directly. With that restriction imposed, DDML and 2SLS yield similar estimates, and DDML also passes a placebo test.
+To see why a random forest can fail here, consider the partially linear IV (PLIV) model
 
-## 1. Setup and variables
+$$Y = \theta\, D + g(X) + \varepsilon, \qquad
+D = m(X) + \alpha\, Z + u, \qquad
+Z = r(X) + v.$$
 
-| Variable | Description |
-|----|----|
-| `workedm` | Outcome: mother worked last year |
-| `morekids` ($D$) | Indicator: mother has more than two children |
-| `samesex` ($Z$) | Instrument: first two children of the same sex |
-| `boy1st`, `boy2nd` | Sex of first / second child (controls) |
-| `agem1`, `agefstm` | Mother’s age / age at first birth |
-| `blackm`, `hispm`, `othracem` | Race indicators |
-| `educm` | Years of education |
+The outcome ($Y$ = `workedm`) is an indicator for whether the mother is working. The treatment ($D$ = `morekids`) indicates more than two children. The instrument ($Z$ = `samesex`) is defined above. The controls $X$ are:
 
-The script defines three named groups of regressors:
+| Variable                      | Definition                        |
+|-------------------------------|-----------------------------------|
+| `boy1st`, `boy2nd`            | Sex of first / second child       |
+| `agem1`, `agefstm`            | Mother’s age / age at first birth |
+| `blackm`, `hispm`, `othracem` | Race indicators                   |
+| `educm`                       | Years of education                |
 
-<details markdown="block">
+DDML estimates $\theta$ from a residualized score: it instruments the residualized treatment $\tilde D = D - \hat m(X)$ with the residualized instrument $\tilde Z = Z - \hat r(X)$ in a regression on $\tilde Y = Y - \hat g(X)$. The nuisance functions $\hat g$, $\hat m$, and $\hat r$ are estimated by machine learning on held-out folds.
+
+The problem sits in $\hat r(X)$. By construction,
+
+$$\text{samesex} = \text{boy1st}\cdot\text{boy2nd} + (1-\text{boy1st})(1-\text{boy2nd}),$$
+
+so any flexible machine learner that is free to combine `boy1st` and `boy2nd` will discover this interaction and predict `samesex` almost exactly from $X$. The residualized instrument then collapses to $\tilde Z \approx 0$ and the second-stage coefficient becomes uninformative.
+
+2SLS does not fail in the same way, because it never fits the `boy1st × boy2nd` interaction unless the analyst adds it by hand. The identifying assumption — that `boy1st` and `boy2nd` enter $r(X)$ additively — is baked into the linear functional form. Flexible learners (random forests, gradient-boosted trees, deep nets) undo that protection: they exploit any interaction that helps prediction, including the one that destroys identification.
+
+## Two ways to encode the restriction
+
+We need a learner that fits $r(X)$ flexibly in `agem1`, `agefstm`, race, and `educm`, but is forbidden from interacting `boy1st` with `boy2nd`. Below we show two ways to enforce this: the first approach uses regularized regression and relies on block-structured polynomial; the second approach implements no-interaction constraints in tree-based boosting (using the XGBoost package).
+
+### Setup and variables
+
+We define three named groups of regressors:
+
+<details markdown="block" open>
 
 <summary>
 
@@ -57,33 +74,13 @@ kfolds <- 2L
 
 </details>
 
-`Xbase_boy1` and `Xbase_boy2` are deliberately set up so that we can build a polynomial dictionary separately within each block, guaranteeing the resulting features never multiply a `boy1st`-term by a `boy2nd`-term.
+`Xbase_boy1` and `Xbase_boy2` each contain only one of the two sex indicators. Building a polynomial dictionary separately on each block guarantees that no resulting feature multiplies a `boy1st` term by a `boy2nd` term.
 
-## 2. The identification issue, formally
+### Polynomial dictionaries built block-by-block
 
-The partially linear IV (PLIV) model is
+For lasso and ridge we build a cubic polynomial dictionary *separately* on `Xbase_boy1` and `Xbase_boy2`, then column-bind them. Because neither dictionary contains both sex indicators, no resulting term involves their interaction.
 
-$$Y = \theta\, D + g(X) + \varepsilon, \qquad
-D = m(X) + \alpha\, Z + u, \qquad
-Z = r(X) + v.$$
-
-The DDML score uses the residualized instrument $\tilde Z = Z - \hat r(X)$ to instrument the residualized treatment $\tilde D = D - \hat m(X)$ in a regression on $\tilde Y = Y - \hat g(X)$. The whole construction collapses if $\hat r(X) \approx Z$, because then $\tilde Z \approx 0$.
-
-In Angrist & Evans, by construction,
-
-$$\text{samesex} = \text{boy1st}\cdot\text{boy2nd} + (1-\text{boy1st})(1-\text{boy2nd}),$$
-
-which is *exactly* a function of the interaction `boy1st × boy2nd` and the levels. So if $r(X)$ is allowed to use that interaction, a flexible learner will recover `samesex` essentially perfectly from $X$ — making $\tilde Z = 0$ by construction.
-
-OLS doesn’t have this problem because, we never enter `boy1st × boy2nd` as a control. The exclusion of `boy1st × boy2nd` is an identifying restriction. Flexible machine learners like random forests and tree-based gradient boosting will leverage interactions for prediction and thus destroy the instrument. The cure is to enforce the same restriction inside the machine learning algorithms.
-
-## 3. Two ways to encode the restriction
-
-### 3.1 Polynomial dictionaries built block-by-block
-
-For lasso and ridge we build a cubic polynomial dictionary *separately* on `Xbase_boy1` and `Xbase_boy2`, then stack them. Because the two dictionaries never share both `boy1st` and `boy2nd`, no resulting monomial multiplies the two sex indicators together.
-
-<details markdown="block">
+<details markdown="block" open>
 
 <summary>
 
@@ -109,15 +106,15 @@ X_poly_b2 <- build_poly3(data, Xbase_boy2)   # cubic poly without boy1st
 
 </details>
 
-### 3.2 XGBoost interaction constraints
+### XGBoost interaction constraints
 
-Tree-based methods allow imposing no-interaction constraints by enforcing that a single tree can split on `boy1st` *or* `boy2nd` but never both inside one path. Standard random forest implementations in R do, however, not implement such a constraint. We thus use XGBoost which lets us declare which features are allowed to appear together along any single tree path. We pass two groups, one containing `boy1st` (index 1) plus the demographics, and one containing `boy2nd` (index 2) plus the demographics.
+Tree ensembles can incorporate no-interaction contraints by declaring which features are allowed to share a single tree path. The idea is to let the tree paths split on `boy1st` *or* `boy2nd` but never on both. Standard random-forest implementations in R do not allow specifying these constraints, but XGBoost does, via `interaction_constraints`. We pass two groups: one containing `boy1st` (index 1) plus the demographics, and one containing `boy2nd` (index 2) plus the demographics. We also consider two XGBoost specifications with two learning rates (0.01 and 0.03).
 
-<details markdown="block">
+<details markdown="block" open>
 
 <summary>
 
-R code — `make_learner_specs(constraint = TRUE, ...)`
+R code — learner specifications\`
 </summary>
 
 ``` r
@@ -129,29 +126,30 @@ xgb_args2 <- list(nrounds = 500L, learning_rate = 0.03, nthread = 1L,
                   interaction_constraints = list(c(1, 3:8), c(2:8)))
 
 specs_stack <- list(
-  list(what = ols,         assign_X = base_idx),
   list(what = mdl_glmnet,  args = list(alpha = 1, cv = TRUE),
                            assign_X = poly_idx),
   list(what = mdl_glmnet,  args = list(alpha = 0, cv = TRUE),
                            assign_X = poly_idx),
   list(what = mdl_xgboost, args = xgb_args1, assign_X = base_idx),
-  list(what = mdl_xgboost, args = xgb_args2, assign_X = base_idx) 
+  list(what = mdl_xgboost, args = xgb_args2, assign_X = base_idx)
 )
 ```
 
 </details>
 
-The `assign_X` field tells `ddml` which columns of `X_full` each learner sees: OLS and XGBoost work on the eight original variables; lasso and ridge work on the (additivity-respecting) polynomial dictionary.
+The `assign_X` field tells `ddml` which columns of `X_full` each learner sees: XGBoost gets the eight original variables, while lasso and ridge work on the (additivity-respecting) polynomial dictionary.
 
-## 4. DDML estimation
+## DDML estimation
 
-We call `ddml::ddml_pliv()` with the five-learner stack, short-stacking via non-negative least squares, two folds, and heteroskedasticity-robust standard errors. After fitting, we also pull the per-learner cross-fitted residuals so we can read off a per-learner first-stage coefficient.
+We call `ddml::ddml_pliv()` with the four-learner stack, short-stacking via non-negative least squares, two folds, and heteroskedasticity-robust standard errors.
 
-<details markdown="block">
+Setting `custom_ensemble_weights = diag(4)` makes `ddml` return both the NNLS-stacked estimate and each learner’s standalone estimate from a single fit — that is where the per-learner rows in the tables below come from.
+
+<details markdown="block" open>
 
 <summary>
 
-R code — `ddml_pliv()` plus per-learner first-stage extraction
+R code — `ddml_pliv()` call
 </summary>
 
 ``` r
@@ -167,89 +165,49 @@ fit_ddml <- ddml_pliv(
   shortstack              = TRUE,
   silent                  = TRUE
 )
-
-# Per-learner first-stage: regress residualized D on residualized Z.
-for (l in colnames(fit_ddml$fitted$D1_X$cf_fitted)) {
-  D_resid <- D[,1] - fit_ddml$fitted$D1_X$cf_fitted[, l]
-  Z_resid <- Z[,1] - fit_ddml$fitted$Z1_X$cf_fitted[, l]
-  feols(D_resid ~ Z_resid, se = "hetero")   # learner-l first stage
-}
 ```
 
 </details>
 
-Three things worth noting:
+## Estimation
 
-- `custom_ensemble_weights = diag(5)` makes `ddml` return *both* the NNLS stack and the five single-learner “ensembles,” so a single fit yields all the per-learner numbers below.
-- The PLIV score has the same Neyman-orthogonality structure as the partially linear model: small first-order errors in $\hat r$, $\hat m$, $\hat g$ wash out, *provided* $\tilde Z$ retains nontrivial variation. Section 3 is exactly about preserving that variation.
+We estimate the model twice: once with the observed `samesex` instrument, and once with a placebo $Z=$ `agem1 + educm + Uniform(0,1)`, following Angrist & Frandsen. After residualizing on $X$, the placebo is just noise, so any apparent first-stage signal there is spurious by construction.
 
-## 5. Two instrument flavors
+### Real IV (`samesex`) — DDML reproduces 2SLS
 
-To stress-test the pipeline we run it with two definitions of `Z`:
+With the observed instrument, all constrained DDML variants — stacking, lasso, ridge, XGBoost — land essentially on the 2SLS point estimate. Unconstrained XGBoost (the last two rows of the table) drifts off and standard errors inflate.
 
-| Flavor | Definition | Expected behavior |
-|----|----|----|
-| `observed` | `samesex` (the real Angrist–Evans IV) | DDML should agree with 2SLS |
-| `fake` | `agem1 + educm + Uniform(0,1)` — a pure function of the controls plus noise | First stage and structural effect should both be ~0 |
-
-`fake` is the cleanest placebo: any first-stage signal a learner finds there is spurious, because `Z` is by construction a function of two controls plus noise.
-
-``` r
-df <- load_data("pums80m.dta")
-res <- list()
-for (flavor in c("observed", "fake")) {
-  for (constraint in c(TRUE, FALSE)) {
-    res[[paste(flavor, "workedm",
-               ifelse(constraint, "constrained", "unconstrained"), sep = "_")]] <-
-      estimate(df, yvar = "workedm", instrument = flavor, constraint = constraint)
-  }
-}
-res <- bind_rows(res)
-arrow::write_parquet(res, "results.parquet")
-```
-
-### 5.1 Real IV (`samesex`) — DDML reproduces 2SLS
-
-For the observed `samesex` instrument, all constrained DDML variants — stacking, OLS, lasso, ridge, XGBoost — land on essentially the 2SLS point estimate. Unconstrained XGBoost (last two rows of the table) drifts off.
-
-| Learner | Structural / constrained | Structural / unconstrained | First stage / constrained | First stage / unconstrained |
+| Learner | Structural / constrained | First stage / constrained | Structural / unconstrained | First stage / unconstrained |
 |:---|:---|:---|:---|:---|
-| 2SLS | -0.118 (0.028) | — | 0.069 (0.002) | — |
-| Stacking | -0.119 (0.028) | -0.477 (0.319) | 0.070 (0.002) | 949.001 (278.321) |
-| OLS | -0.119 (0.028) | -0.081 (0.118) | 0.069 (0.002) | 0.096 (0.011) |
-| Lasso | -0.119 (0.028) | -0.412 (5.453) | 0.069 (0.002) | 0.012 (0.060) |
-| Ridge | -0.120 (0.028) | -0.456 (0.439) | 0.069 (0.002) | 0.058 (0.023) |
-| XGB(.01) | -0.118 (0.027) | -0.448 (0.173) | 0.070 (0.002) | 1.743 (0.279) |
-| XGB(.03) | -0.115 (0.027) | -0.649 (0.459) | 0.070 (0.002) | 368.518 (147.053) |
+| 2SLS | -0.118 (0.028) | 0.069 (0.002) | — | — |
+| Stacking | -0.119 (0.028) | 0.070 (0.002) | -0.467 (0.319) | 946.342 (278.321) |
+| Lasso | -0.119 (0.028) | 0.069 (0.002) | -0.412 (5.453) | 0.012 (0.060) |
+| Ridge | -0.120 (0.028) | 0.069 (0.002) | -0.456 (0.439) | 0.058 (0.023) |
+| XGB(.01) | -0.118 (0.027) | 0.070 (0.002) | -0.448 (0.173) | 1.743 (0.279) |
+| XGB(.03) | -0.115 (0.027) | 0.070 (0.002) | -0.649 (0.459) | 368.518 (147.053) |
 
-Outcome: workedm. Instrument: observed (samesex). Coefficient (SE) per learner; columns split Stage × Constraint. The 2SLS row does not depend on the constraint, so it is reported once per stage.
+*Notes.* Outcome: `workedm` (mother works). Instrument: observed (`samesex`). Each cell shows the coefficient with its standard error in parentheses; columns split each estimate by stage (structural vs. first-stage) and by whether the no-interaction constraint between `boy1st` and `boy2nd` is imposed. The 2SLS row does not depend on the constraint and is reported once per stage.
+{: .fs-2 }
 
-### 5.2 Pure-noise IV (`fake`) — DDML refuses to find signal
+### Pure-noise IV (`fake`) — DDML refuses to find signal
 
-When `Z = agem1 + educm + noise`, the true first stage is zero. Constrained DDML correctly returns a first-stage and structural effect indistinguishable from zero. Unconstrained learners — XGBoost in particular — can manufacture a nonzero first stage by exploiting the way `agem1` and `educm` enter both $r(X)$ and the controls.
+When $Z=$ `agem1 + educm + noise`, the true first-stage coefficient is zero. DDML behaves the way it should on a noise instrument: the first-stage DDML estimates (with or without constraint enforced) are clustering around zero. The standard errors of the structural estimates are inflated, with confidence intervals easily covering zero. The constrained-vs-unconstrained distinction has essentially no effect here.
 
-| Learner | Structural / constrained | Structural / unconstrained | First stage / constrained | First stage / unconstrained |
+| Learner | Structural / constrained | First stage / constrained | Structural / unconstrained | First stage / unconstrained |
 |:---|:---|:---|:---|:---|
-| 2SLS | -1.613 (1.278) | — | -0.004 (0.003) | — |
-| Stacking | -1.549 (1.228) | -1.543 (1.179) | -0.004 (0.003) | -0.005 (0.003) |
-| OLS | -1.632 (1.306) | 1.226 (0.149) | -0.004 (0.003) | 0.018 (0.002) |
-| Lasso | -1.720 (1.423) | -1.744 (1.444) | -0.004 (0.003) | -0.004 (0.003) |
-| Ridge | 1.722 (1.363) | 2.056 (1.546) | 0.004 (0.002) | 0.003 (0.002) |
-| XGB(.01) | -1.838 (1.527) | -1.929 (1.629) | -0.004 (0.003) | -0.004 (0.003) |
-| XGB(.03) | -1.661 (1.504) | -1.355 (1.035) | -0.004 (0.003) | -0.005 (0.003) |
+| 2SLS | -1.613 (1.278) | -0.004 (0.003) | — | — |
+| Stacking | -1.583 (1.314) | -0.004 (0.003) | -1.526 (1.180) | -0.005 (0.003) |
+| Lasso | -1.720 (1.423) | -0.004 (0.003) | -1.744 (1.444) | -0.004 (0.003) |
+| Ridge | 1.722 (1.363) | 0.004 (0.002) | 2.056 (1.546) | 0.003 (0.002) |
+| XGB(.01) | -1.838 (1.527) | -0.004 (0.003) | -1.929 (1.629) | -0.004 (0.003) |
+| XGB(.03) | -1.661 (1.504) | -0.004 (0.003) | -1.355 (1.035) | -0.005 (0.003) |
 
-Outcome: workedm. Instrument: fake (= agem1 + educm + uniform noise). The true effect is zero.
+*Notes.* Outcome: `workedm` (mother works). Instrument: placebo, $Z=$ `agem1 + educm + Uniform(0,1)`; the true first-stage coefficient is zero. Each cell shows the coefficient with its standard error in parentheses; columns split each estimate by stage (structural vs. first-stage) and by whether the no-interaction constraint between `boy1st` and `boy2nd` is imposed. The 2SLS row does not depend on the constraint and is reported once per stage.
+{: .fs-2 }
 
-## 6. Takeaway
+## Takeaway
 
-Identification restrictions don’t disappear when you replace OLS with a learner — they just move. In the Angrist & Evans first stage, the restriction is that `boy1st` and `boy2nd` enter additively, and it lives in our choice of regressors. Hand that choice off to a flexible ML learner and the restriction is gone; the learner will find the `boy1st × boy2nd` interaction, residualize the instrument away, and report an apparently-precise but uninformative second stage.
-
-Two primitives make this restriction explicit and learner-side:
-
-- **Block-structured feature dictionaries.** Build polynomial / interaction features within each block separately. Generalizes to “no interaction between A and B” for any partition.
-- **`xgboost` `interaction_constraints`.** A list of allowed groups; any single tree path may only split on features that share a group. The same idea exists in some random-forest implementations under the name *additivity constraints* (see Hooker, 2007).
-
-With either tool in place, DDML is well-behaved on the real IV *and* on the pure-noise placebo. ML is fine for the IV first stage — provided you tell the learner what it isn’t allowed to learn.
+In the Angrist & Evans application, identification rests on a functional-form restriction that 2SLS imposes implicitly. Replacing the linear first stage with a flexible learner leaves it unenforced. This post shows two ways to re-impose it without losing flexibility: regularized regression on a custom polynomial dictionary, and XGBoost with interaction constraints. With first-stage learners that respect the restriction, DDML reproduces the 2SLS estimate on the observed instrument and returns a first stage indistinguishable from zero on the placebo.
 
 ## References
 
