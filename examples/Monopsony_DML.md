@@ -103,24 +103,24 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_zwappwswis9ejchegbmn = TinyTable.createTableFunctions("tinytable_zwappwswis9ejchegbmn");
+      const tableFns_jn568hoo1zpic8qp9rgk = TinyTable.createTableFunctions("tinytable_jn568hoo1zpic8qp9rgk");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_r9wo5cqcf91wi6v490ag',}, 
-          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_m5rbvbkdkpctcyre2eop',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_7aa8blspvd378qcyuyhy',}, 
-          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_y3xi036nio0plz7uizhw',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_nqz7sl6x59k8j7sigcgp',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_t2e34i6vm783saybteo6',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_dl6os6051gyc33h48gwj',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_zhvd29dy1qdhw4edi7k2',}, 
+          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_nhpujra86z6pdgh6hq3q',}, 
+          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_3wivfsbw49iw0rvwapm0',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_tycgaglxra9asmq8qco2',}, 
+          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_2xn0x2xdecvr315qtvz1',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_cjs9tvx4wvrqwrtdz2v2',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_j1rhxc98fwxqct53xne4',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_mamdczvsbugt4n53uvkn',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_agfmvpn5w2q8d7r4ocdb',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_zwappwswis9ejchegbmn.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_jn568hoo1zpic8qp9rgk.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -128,17 +128,17 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_r9wo5cqcf91wi6v490ag, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_r9wo5cqcf91wi6v490ag {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_m5rbvbkdkpctcyre2eop, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_m5rbvbkdkpctcyre2eop {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_7aa8blspvd378qcyuyhy, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_7aa8blspvd378qcyuyhy { text-align: center }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_y3xi036nio0plz7uizhw, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_y3xi036nio0plz7uizhw {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_nqz7sl6x59k8j7sigcgp, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_nqz7sl6x59k8j7sigcgp {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_t2e34i6vm783saybteo6, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_t2e34i6vm783saybteo6 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_dl6os6051gyc33h48gwj, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_dl6os6051gyc33h48gwj { text-align: left }
-    #tinytable_zwappwswis9ejchegbmn td.tinytable_css_zhvd29dy1qdhw4edi7k2, #tinytable_zwappwswis9ejchegbmn th.tinytable_css_zhvd29dy1qdhw4edi7k2 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_nhpujra86z6pdgh6hq3q, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_nhpujra86z6pdgh6hq3q {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_3wivfsbw49iw0rvwapm0, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_3wivfsbw49iw0rvwapm0 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_tycgaglxra9asmq8qco2, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_tycgaglxra9asmq8qco2 { text-align: center }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_2xn0x2xdecvr315qtvz1, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_2xn0x2xdecvr315qtvz1 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_cjs9tvx4wvrqwrtdz2v2, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_cjs9tvx4wvrqwrtdz2v2 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_j1rhxc98fwxqct53xne4, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_j1rhxc98fwxqct53xne4 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_mamdczvsbugt4n53uvkn, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_mamdczvsbugt4n53uvkn { text-align: left }
+    #tinytable_jn568hoo1zpic8qp9rgk td.tinytable_css_agfmvpn5w2q8d7r4ocdb, #tinytable_jn568hoo1zpic8qp9rgk th.tinytable_css_agfmvpn5w2q8d7r4ocdb {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_zwappwswis9ejchegbmn" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_jn568hoo1zpic8qp9rgk" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -183,7 +183,7 @@ Our first DDML estimate is $0.024$ (with a standard error of $0.523$), suggestin
 
 We shouldn’t take this estimate very serious: First, we haven’t validated the use of lasso against other nuisance function estimators. Second, the hand-coded variables we might still miss out on important patterns in the data that are not captured through ad-hoc manual coding.
 
-For this reasons, we will in the [next post]({{ '/examples/Monopsony_Finetune' | relative_url }}) leverage fine-tuned DeBERTa embeddings to better approximate task types. The third post will perform multiple validation checks.
+For this reasons, we will in the <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">next post</a> leverage fine-tuned DeBERTa embeddings to better approximate task types. The third post will perform multiple validation checks.
 
 ## 6. References
 
@@ -193,4 +193,4 @@ For this reasons, we will in the [next post]({{ '/examples/Monopsony_Finetune' |
 - Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).
 - Ipeirotis, P. G. (2010). [Analyzing the Amazon Mechanical Turk marketplace.](https://archive.nyu.edu/handle/2451/29801)
 
-Continue: [**Monopsony II — fine-tuned text embeddings**]({{ '/examples/Monopsony_Finetune' | relative_url }}) · [**Monopsony III — robustness**]({{ '/examples/Monopsony_Robustness' | relative_url }}).
+Continue: <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}"><strong>Monopsony II — fine-tuned text embeddings</strong></a> · <a href="{{ '/examples/Monopsony_Robustness' | relative_url }}"><strong>Monopsony III — robustness</strong></a>.

@@ -24,11 +24,10 @@ library(knitr)
 library(modelsummary)
 
 models <- readRDS("results_entry3.rds")
-# models has four sweep buckets:
-#   $learner    -- XGBoost vs Lasso
-#   $multiseed  -- 5 seeds + median-of-medians
-#   $K         -- K=3 vs K=5
-#   $foldmode  -- cluster vs IID
+# models has two buckets:
+#   $baseline_multiseed -- 5 seeds of the baseline spec (K=3, XGB, cluster) + median-of-medians
+#   $cross_set          -- median-aggregated estimates for baseline vs. three one-knob variants
+#                          (K=5; Lasso; IID folds)
 
 gof_rows <- list(
   list(raw = "nobs", clean = "n",        fmt = 0),
@@ -40,9 +39,11 @@ gof_rows <- list(
 
 # Monopsony III — how robust is the headline elasticity?
 
-*Part 3 of a three-post series. [Part 1]({{ '/examples/Monopsony_DML' | relative_url }}) ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. [Part 2]({{ '/examples/Monopsony_Finetune' | relative_url }}) added fine-tuned DeBERTa embeddings. Both used $K = 3$ recruiter-honest folds, a single XGBoost nuisance learner, one seed, and cluster-robust standard errors at the recruiter level. This post asks: how much of that headline number is a function of those choices?*
+*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. Both used $K = 3$ recruiter-honest folds, a single XGBoost nuisance learner, one seed, and cluster-robust standard errors at the recruiter level. This post asks: how much of that headline number is a function of those choices?*
 
-This final part highlights key validation checks that are worth considering when applying DDML. Specificallu, we repeat the cross-fitting to assess sensitivity to the random fold division, we vary the number of folds $K$, and the construction of the folds (randomize by recruiter vs independent sampling). 
+This final part highlights key validation checks that are worth considering when applying DDML. We first repeat the baseline cross-fitting under $S = 5$ independent randomisation seeds and aggregate them with the paper's median-of-medians estimator. We then compare the resulting baseline median *pairwise* against three one-knob variants — a larger number of folds, a linear nuisance learner, and IID instead of recruiter-honest fold construction — one comparison per subsection so the reader can read each knob's table next to its discussion.
+
+The baseline throughout is the Part 2 specification: $K = 3$ recruiter-honest folds, XGBoost as the single nuisance learner, and cluster-robust standard errors at the recruiter level.
 
 ## 1. Multi-seed aggregation
 
@@ -58,9 +59,9 @@ We here use $S = 5$ seeds, matching the paper.
 ```{r tbl-multiseed}
 #| echo: false
 #| results: asis
-#| tbl-cap: "Per-seed estimates and median-of-medians aggregation. XGBoost; K = 3 cluster-honest folds; cluster-robust SE per seed."
+#| tbl-cap: "Per-seed estimates and median-of-medians aggregation for the baseline specification. XGBoost; K = 3 cluster-honest folds; cluster-robust SE per seed."
 modelsummary(
-  models$multiseed,
+  models$baseline_multiseed,
   coef_map  = c("log_reward" = "log(reward)"),
   gof_map   = gof_rows,
   fmt       = 3,
@@ -69,18 +70,20 @@ modelsummary(
 )
 ```
 
-Compare the median-aggregate estimate column against the seed-specific columns. The single-seed estimates span roughly $-0.06$ to $-0.09$ — a non-trivial spread relative to any individual seed's SE — so sample-split randomness has a noticeable impact real here.
+Compare the median-aggregate column against the seed-specific columns. The single-seed estimates span roughly $-0.06$ to $-0.09$ — a non-trivial spread relative to any individual seed's SE — so sample-split randomness has a noticeable impact here. The median-of-medians point estimate is the inference-bearing number we carry into the cross-set comparison below.
 
-## 2. Sensitivity to the number of folds $K$
+## 2. Pairwise baseline-vs-variant comparisons
 
-Cross-fitting theory accommodates any fixed $K$. Velez (2024) shows performance improves with more folds, peaking at $K = n$ with diminishing returns. In the paper, we recommend to consider the largest number consistent with available compute, and check sensitivity.
+Each subsection below holds the baseline fixed and varies one knob. Every column is itself a median-of-medians over five seeds, so within-table differences reflect the knob rather than seed noise.
+
+### 2.1 Number of folds $K$
 
 ```{r tbl-K}
 #| echo: false
 #| results: asis
-#| tbl-cap: "Coefficient on log(reward) by number of folds K. XGBoost; cluster-honest folds; cluster-robust SE."
+#| tbl-cap: "Baseline vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGBoost; recruiter-honest folds; cluster-robust SE."
 modelsummary(
-  models$K,
+  models$cross_set[c("Baseline (K=3, XGB, cluster)", "K=5, XGB, cluster")],
   coef_map  = c("log_reward" = "log(reward)"),
   gof_map   = gof_rows,
   fmt       = 3,
@@ -89,13 +92,43 @@ modelsummary(
 )
 ```
 
-The point estimate moves modestly across $K \in \{3, 5\}$ (roughly within an SE of each other), but the SE itself widens noticeably — $K = 5$ trains each nuisance fit on $4/5$ of the data instead of $2/3$, but the cross-seed-style noise across the 5 held-out folds shows up in the cluster-robust SE. Compute time scales roughly linearly with $K$. The paper's Implementation Guidance recommends choosing $K$ as the largest round number consistent with available compute; with $n \approx 258{,}000$ either value here is in the range where the bias-variance tradeoff is favourable.
+Cross-fitting theory accommodates any fixed $K$. Velez (2024) shows performance improves with more folds, peaking at $K = n$ with diminishing returns. In the paper we recommend the largest $K$ consistent with available compute, and a sensitivity check. Moving from $K = 3$ to $K = 5$ trains each nuisance fit on $4/5$ of the data instead of $2/3$ and compute scales roughly linearly. With $n \approx 258{,}000$ either value is in the range where the bias–variance tradeoff is favourable.
 
-## 3. Cluster-respecting vs IID folds
+### 2.2 Choice of nuisance learner
 
-This is the one sweep where leaving the default behind is the point. The Ipeirotis cross-section has many postings per recruiter, and the same recruiter's HITs share unobserved features (recruiter style, payout norms, qualification preferences) that correlate with both posted reward and fill time. Splitting at the observation level lets siblings from the same recruiter sit on both sides of the fold boundary — which makes the residuals look more independent than they are, and the cross-fitted $R^2$ look better than the true generalisation $R^2$.
+```{r tbl-learner}
+#| echo: false
+#| results: asis
+#| tbl-cap: "Baseline (XGBoost) vs. Lasso. Both columns are median-of-medians over S = 5 seeds; K = 3 recruiter-honest folds; cluster-robust SE."
+modelsummary(
+  models$cross_set[c("Baseline (K=3, XGB, cluster)", "K=3, Lasso, cluster")],
+  coef_map  = c("log_reward" = "log(reward)"),
+  gof_map   = gof_rows,
+  fmt       = 3,
+  statistic = "std.error",
+  output    = "html"
+)
+```
 
-In `ddml_plm` the lever is whether `cluster_variable` is supplied. Passing the recruiter id forms recruiter-honest folds and clusters SEs at the same level; omitting it gives random IID folds and uses heteroskedasticity-robust SEs.
+The Lasso column underperforms on both $R^2(Y\mid X)$ and $R^2(D\mid X)$ — a learner that does not fit cannot debias, and the DDML paper's Table 5 documents a much sharper version of this pattern across twelve candidate learners, with point estimates of $\theta_0$ spanning $-3.9$ to $2.1$. The cleanest way to sidestep the choice is short-stacking: regress $Y$ and $D$ on the cross-fitted predicted values of every candidate learner under non-negative weights summing to one, and use the resulting weights to build a super-learner for each nuisance function. Table 6 of the paper reports stacked DDML at $\hat\theta_0 = -0.054$ (s.e. $0.020$) and single-best at $-0.060$ (s.e. $0.018$); the stacking weights load almost entirely on the three XGBoost specifications, so when XGBoost dominates the linear alternatives — as it does here — stacking inherits its performance for free. We do not run short-stacking in `blog3_robust.R`; the full pipeline lives in `Code/dube_monopsony/`.
+
+### 2.3 Cluster-respecting vs IID folds
+
+```{r tbl-folds}
+#| echo: false
+#| results: asis
+#| tbl-cap: "Baseline (recruiter-honest folds, cluster-robust SE) vs. IID folds with het-robust SE. Both columns are median-of-medians over S = 5 seeds; K = 3; XGBoost."
+modelsummary(
+  models$cross_set[c("Baseline (K=3, XGB, cluster)", "K=3, XGB, IID folds")],
+  coef_map  = c("log_reward" = "log(reward)"),
+  gof_map   = gof_rows,
+  fmt       = 3,
+  statistic = "std.error",
+  output    = "html"
+)
+```
+
+This is the sweep where leaving the default behind is the point. The Ipeirotis cross-section has many postings per recruiter, and the same recruiter's HITs share unobserved features (recruiter style, payout norms, qualification preferences) that correlate with both posted reward and fill time. Splitting at the observation level lets siblings from the same recruiter sit on both sides of the fold boundary — which makes the residuals look more independent than they are, and the cross-fitted $R^2$ look better than the true generalisation $R^2$. In `ddml_plm` the lever is whether `cluster_variable` is supplied; passing the recruiter id forms recruiter-honest folds and clusters SEs at the same level; omitting it gives random IID folds and uses heteroskedasticity-robust SEs:
 
 ```r
 fit <- ddml_plm(
@@ -109,41 +142,9 @@ fit <- ddml_plm(
 )
 ```
 
-```{r tbl-fold}
-#| echo: false
-#| results: asis
-#| tbl-cap: "Coefficient on log(reward) under recruiter-clustered vs IID folds, with matching SE estimator. XGBoost; K = 3."
-modelsummary(
-  models$foldmode,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
-  fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
-)
-```
+The cross-fitted $R^2$ values typically *fall* when fold construction moves from IID to recruiter-honest, because the held-out fold now contains recruiters the nuisance learner never saw — that is the honest predictive performance and it is what should enter the DDML score. The standard error typically *rises*, because clustering at the recruiter level accounts for the correlated residuals that het-robust ignores. Footnote 19 of the review paper, which points to an online-appendix table comparing the two, makes the same point: the cluster-honest combination is the inference-bearing one for this application, which is why Entries 1–2 and the baseline of this post use it as their default.
 
-Two things to watch. The cross-fitted $R^2$ values typically *fall* when fold construction moves from IID to recruiter-honest, because the held-out fold now contains recruiters the nuisance learner never saw — that is the honest predictive performance and it is what should enter the DDML score. The standard error typically *rises*, because clustering at the recruiter level accounts for the correlated residuals that het-robust ignores. Footnote 19 of the review paper, which points to an online-appendix table comparing the two, makes the same point: the cluster-honest combination is the inference-bearing one for this application, which is why Entries 1–2 and the rest of this post use it as their default.
-
-## 4. Choice of nuisance learner (and a note on short-stacking)
-
-```{r tbl-learner}
-#| echo: false
-#| results: asis
-#| tbl-cap: "Coefficient on log(reward) by single nuisance learner. K = 3 cluster-honest folds; cluster-robust SE."
-modelsummary(
-  models$learner,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
-  fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
-)
-```
-
-The choice of nuisance learner matters in this application: Lasso lands roughly $1.7\times$ further from zero than XGBoost, with a standard error several times larger and an outcome $R^2$ about 20 percentage points lower — a learner that does not fit cannot debias. The DDML paper's Table 5 documents a much sharper version of this pattern across twelve candidate learners, with point estimates of $\theta_0$ spanning $-3.9$ to $2.1$. The cleanest way to sidestep the choice is short-stacking: regress $Y$ and $D$ on the cross-fitted predicted values of every candidate learner under non-negative weights summing to one, and use the resulting weights to build a super-learner for each nuisance function. Table 6 of the paper reports stacked DDML at $\hat\theta_0 = -0.054$ (s.e. $0.020$) and single-best at $-0.060$ (s.e. $0.018$); the stacking weights load almost entirely on the three XGBoost specifications, so when XGBoost dominates the linear alternatives — as it does here — stacking inherits its performance for free. We do not run short-stacking in `blog3_robust.R`; the full pipeline lives in `Code/dube_monopsony/`.
-
-## 5. What to take away
+## 3. What to take away
 
 - A single ML learner is not a complete DDML specification. The point estimate is informative only when the nuisance learner can actually predict — cross-fitted $R^2$ is the diagnostic to lean on.
 - Short-stacking (or, more conservatively, reporting both stacking and single-best) sidesteps the learner-selection problem and is cheap relative to refitting four nuisance models from scratch.

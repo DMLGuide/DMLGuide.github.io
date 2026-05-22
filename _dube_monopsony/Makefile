@@ -17,6 +17,14 @@
 # Per-post targets:
 #   make blog1 / blog2 / blog3 -> results .rds + render for that post only
 #
+# blog3 is split across four specs (baseline, K5, lasso, iid) so each one can
+# be run independently to bound peak memory (see blog3_robust.R `specs` list):
+#   make blog3-baseline / blog3-K5 / blog3-lasso / blog3-iid
+#                  -> runs only that spec, writes results_entry3_<spec>.rds
+#   make blog3-parts    -> all four parts (no combine)
+#   make blog3-combine  -> assemble results_entry3.rds from the four parts
+#   make blog3          -> ensures all four parts exist, combines, renders
+#
 # The shared dataset target is intentionally not a dependency of `results` / `render`,
 # because rebuilding it requires the raw monopsony_data root which is not part of
 # this repo. The committed data/monopsony_blog.rds is the source of truth.
@@ -50,6 +58,12 @@ BLOG1_OUT := results_entry1.rds
 BLOG2_OUT := results_entry2.rds
 BLOG3_OUT := results_entry3.rds
 
+# blog3 is split into four per-spec parts (see specs registry in blog3_robust.R).
+# Each part runs independently and saves a lean (b, SE, R^2) summary; the final
+# results_entry3.rds is assembled by the `combine` action.
+BLOG3_SPECS := baseline K5 lasso iid
+BLOG3_PARTS := $(addprefix results_entry3_,$(addsuffix .rds,$(BLOG3_SPECS)))
+
 BLOG1_QMD := Monopsony_DML.qmd
 BLOG2_QMD := Monopsony_Finetune.qmd
 BLOG3_QMD := Monopsony_Robustness.qmd
@@ -58,7 +72,8 @@ BLOG1_MD  := ../examples/Monopsony_DML.md
 BLOG2_MD  := ../examples/Monopsony_Finetune.md
 BLOG3_MD  := ../examples/Monopsony_Robustness.md
 
-.PHONY: all data results render figures clean blog1 blog2 blog3
+.PHONY: all data results render figures clean blog1 blog2 blog3 \
+        blog3-parts blog3-baseline blog3-K5 blog3-lasso blog3-iid blog3-combine
 
 all: figures render
 
@@ -81,8 +96,22 @@ $(BLOG1_OUT): $(BLOG1_R) | $(DATA_RDS)
 $(BLOG2_OUT): $(BLOG2_R) | $(DATA_RDS)
 	$(R) $(BLOG2_R)
 
-$(BLOG3_OUT): $(BLOG3_R) | $(DATA_RDS)
-	$(R) $(BLOG3_R)
+# blog3 per-spec parts (each is one entry of the spec registry in blog3_robust.R).
+# Pattern rule: results_entry3_<spec>.rds <- Rscript blog3_robust.R <spec>
+results_entry3_%.rds: $(BLOG3_R) | $(DATA_RDS)
+	$(R) $(BLOG3_R) $*
+
+# Convenience aliases.
+blog3-baseline: results_entry3_baseline.rds
+blog3-K5:       results_entry3_K5.rds
+blog3-lasso:    results_entry3_lasso.rds
+blog3-iid:      results_entry3_iid.rds
+blog3-parts:    $(BLOG3_PARTS)
+blog3-combine:  $(BLOG3_OUT)
+
+# Final blog3 output is assembled by the `combine` action from the four parts.
+$(BLOG3_OUT): $(BLOG3_PARTS) $(BLOG3_R)
+	$(R) $(BLOG3_R) combine
 
 # --- TikZ figures: .tex -> .pdf -> .png ---
 # pdflatex emits the PDF in the current directory; pdftoppm rasterises it
@@ -128,7 +157,7 @@ blog2: $(BLOG2_MD)
 blog3: $(BLOG3_MD)
 
 clean:
-	rm -f $(BLOG1_OUT) $(BLOG2_OUT) $(BLOG3_OUT)
+	rm -f $(BLOG1_OUT) $(BLOG2_OUT) $(BLOG3_OUT) $(BLOG3_PARTS)
 	rm -f $(FIGURES)
 	rm -f *.aux *.log $(ALGO_PDF) $(BASIC_PDF)
 	rm -rf _freeze .quarto
