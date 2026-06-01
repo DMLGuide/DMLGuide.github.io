@@ -10,9 +10,9 @@ permalink: /
 
 The DML Guide provides resources accompanying the review paper "Applied Double/Debiased Machine Learning" by Ahrens, Chernozhukov, Hansen, Kozbur, Schaffer and Wiemann.
 
-> This paper provides a practical introduction to Double/Debiased Machine Learning (DML). DML provides a general approach to performing inference about a target parameter in the presence of nuisance parameters. The aim of DML is to reduce the impact of nuisance parameter estimation on estimators of the parameter of interest. We describe DML and its two essential components: Neyman orthogonality and cross-fitting. We highlight that DML reduces functional form dependence and accommodates the use of complex data types, such as text data. We illustrate its application through three empirical examples that demonstrate DML's applicability in cross-sectional and panel settings.
+> This paper provides an introduction to Double/Debiased Machine Learning (DML). DML is a general approach to performing inference about a target parameter in the presence of nuisance functions: objects that are needed to identify the target parameter but are not of primary interest. Nuisance functions arise naturally in many settings, such as when controlling for confounding variables or leveraging instruments. The paper describes two biases that arise from nuisance function estimation and explains how DML alleviates these biases. Consequently, DML allows the use of flexible methods, including machine learning tools, for estimating nuisance functions, reducing the dependence on auxiliary functional form assumptions and enabling the use of complex non-tabular data, such as text or images. We illustrate the application of DML through simulations and empirical examples. We conclude with a discussion of recommended practices. A companion website includes additional examples and references to other resources. 
 
-Link to the paper: **(to be added)**.
+[Published version](https://www.aeaweb.org/articles?id=10.1257/jel.20261758) --- [arXiv version](https://arxiv.org/abs/2504.08324)
 
 On this website, you will find 
 - replication materials, 

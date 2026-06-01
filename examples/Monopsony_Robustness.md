@@ -11,46 +11,41 @@ enable_copy_code_button: true
 
 # Monopsony III — how robust is the headline elasticity?
 
-*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. Both used $K = 3$ recruiter-honest folds, a single XGBoost nuisance learner, one seed, and cluster-robust standard errors at the recruiter level. This post asks: how much of that headline number is a function of those choices?*
+*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. This final post refines and validates the DDML specification.*
 
-This final part highlights validation checks worth running when applying DDML. We start by repeating the baseline cross-fitting under $S = 5$ independent randomisation seeds and aggregating them with the paper’s median-of-medians estimator. We then compare the resulting baseline median *pairwise* against three one-knob variants — a different nuisance learner, IID instead of recruiter-honest fold construction, and a larger number of folds — so each knob’s contribution can be read in isolation.
+In Part 2, we considered a particular DDML specification with $K=3$ cross-fitting folds, randomly split by recruiter, and XGBoost (using 800 trees, a minimum node size of 500, early stopping) as the nuisance learner. This final part illustrates how to refine the DDML specification and highlights sensible validation checks.
 
-The baseline throughout is the Part 2 specification: $K = 3$ recruiter-honest folds, XGBoost (the third XGB configuration, `XGB 3`) as the reported nuisance learner, and cluster-robust standard errors at the recruiter level. All numbers in this post are read directly from the per-seed `.RData` results saved by `Code/dube_monopsony/run_cvc.R`; the setup chunk walks the `monopsony_data/intermediate` tree and exposes them as the named lists `iid_K3`, `xclust_K3`, and `xclust_K5`, each keyed by seed.
+## Multi-seed median aggregation (XGBoost)
 
-## 1. Multi-seed aggregation
+A single randomization seed generates one random partition of the sample into folds. Asymptotically the exact partition does not matter; in finite samples, however, it can make a noticeable difference.
 
-A single randomization seed generates one random partition of the sample into folds, and also affects machine learning algorithms relying on randomization. Asymptotically the exact random partition does not matter; in finite samples it can make a difference. Section 5 of the review paper recommends repeating the cross-fitting $S$ times and reporting the median-aggregate estimate:
+The table below repeats the random fold splitting and DDML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples.
 
-$$\hat\theta_0^{\text{median}} = \mathrm{median}\bigl\{\hat\theta_{0,s}\bigr\}_{s=1}^{S},\qquad
-\widehat{\mathrm{s.e.}}^{\text{median}} \;=\; \sqrt{\mathrm{median}\bigl\{\widehat{\mathrm{s.e.}}_s^{\,2} + (\hat\theta_{0,s} - \hat\theta_0^{\text{median}})^2\bigr\}_{s=1}^{S}}.$$
+<div id="tbl-multiseed-xgb">
 
-We here use $S = 5$ seeds, matching the paper.
-
-<div id="tbl-multiseed">
-
-Table 1: Per-seed estimates and median-of-medians aggregation for the baseline specification. XGB 3 nuisance learner; K = 3 recruiter-honest folds; cluster-robust SE per seed. R² rows are seed-specific for the per-seed columns and median-across-seeds for the aggregate column.
+Table 1: Per-seed estimates and median-aggregated estimates for the baseline specification.
 <!-- preamble start -->
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_musp3ubai0h0wiphh5jn = TinyTable.createTableFunctions("tinytable_musp3ubai0h0wiphh5jn");
+      const tableFns_y2hnvt6wl2tiqyupykk7 = TinyTable.createTableFunctions("tinytable_y2hnvt6wl2tiqyupykk7");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '5', j: 2 }, { i: '5', j: 3 }, { i: '5', j: 4 }, { i: '5', j: 5 }, { i: '5', j: 6 }, { i: '5', j: 7 } ], css_id: 'tinytable_css_rqocdvkwx5ig247utqh1',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 }, { i: '2', j: 4 }, { i: '2', j: 5 }, { i: '2', j: 6 }, { i: '2', j: 7 } ], css_id: 'tinytable_css_gpt0pz0dl03gex2lokj7',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '1', j: 4 }, { i: '3', j: 4 }, { i: '4', j: 4 }, { i: '1', j: 5 }, { i: '3', j: 5 }, { i: '4', j: 5 }, { i: '1', j: 6 }, { i: '3', j: 6 }, { i: '4', j: 6 }, { i: '1', j: 7 }, { i: '3', j: 7 }, { i: '4', j: 7 } ], css_id: 'tinytable_css_if09b27soln7rbkjdk24',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 }, { i: '0', j: 4 }, { i: '0', j: 5 }, { i: '0', j: 6 }, { i: '0', j: 7 } ], css_id: 'tinytable_css_njuq26x1lte4y64xzf6z',}, 
-          { positions: [ { i: '5', j: 1 } ], css_id: 'tinytable_css_r788ahqs94a7h8gsrvv6',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_hn6jvjntd1rb1y79tf29',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 } ], css_id: 'tinytable_css_xzg5446ypgx6jzg50kvj',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_t2x6a312kylv5qvw3gce',}, 
+          { positions: [ { i: '9', j: 2 }, { i: '9', j: 3 }, { i: '9', j: 4 }, { i: '9', j: 5 }, { i: '9', j: 6 }, { i: '9', j: 7 } ], css_id: 'tinytable_css_t29sm0m4g794zg7je8kx',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 }, { i: '2', j: 4 }, { i: '2', j: 5 }, { i: '2', j: 6 }, { i: '2', j: 7 } ], css_id: 'tinytable_css_5xgl6adm8djeusje1dlx',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '6', j: 2 }, { i: '7', j: 2 }, { i: '8', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 }, { i: '6', j: 3 }, { i: '7', j: 3 }, { i: '8', j: 3 }, { i: '1', j: 4 }, { i: '3', j: 4 }, { i: '4', j: 4 }, { i: '5', j: 4 }, { i: '6', j: 4 }, { i: '7', j: 4 }, { i: '8', j: 4 }, { i: '1', j: 5 }, { i: '3', j: 5 }, { i: '4', j: 5 }, { i: '5', j: 5 }, { i: '6', j: 5 }, { i: '7', j: 5 }, { i: '8', j: 5 }, { i: '1', j: 6 }, { i: '3', j: 6 }, { i: '4', j: 6 }, { i: '5', j: 6 }, { i: '6', j: 6 }, { i: '7', j: 6 }, { i: '8', j: 6 }, { i: '1', j: 7 }, { i: '3', j: 7 }, { i: '4', j: 7 }, { i: '5', j: 7 }, { i: '6', j: 7 }, { i: '7', j: 7 }, { i: '8', j: 7 } ], css_id: 'tinytable_css_al4v9ri5xkab1n1kpvfg',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 }, { i: '0', j: 4 }, { i: '0', j: 5 }, { i: '0', j: 6 }, { i: '0', j: 7 } ], css_id: 'tinytable_css_d0g36p59d5a2rkl996ay',}, 
+          { positions: [ { i: '9', j: 1 } ], css_id: 'tinytable_css_9v8pcq6elqrbxz3jymx7',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_62jlrpmpg2kt0kaizsa1',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 }, { i: '6', j: 1 }, { i: '7', j: 1 }, { i: '8', j: 1 } ], css_id: 'tinytable_css_83vyv8mamuc68nlzyqog',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_8jobqwcl5otdnk2tdjzr',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_musp3ubai0h0wiphh5jn.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_y2hnvt6wl2tiqyupykk7.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -58,31 +53,31 @@ Table 1: Per-seed estimates and median-of-medians aggregation for the baseline 
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_rqocdvkwx5ig247utqh1, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_rqocdvkwx5ig247utqh1 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_gpt0pz0dl03gex2lokj7, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_gpt0pz0dl03gex2lokj7 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_if09b27soln7rbkjdk24, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_if09b27soln7rbkjdk24 { text-align: center }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_njuq26x1lte4y64xzf6z, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_njuq26x1lte4y64xzf6z {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_r788ahqs94a7h8gsrvv6, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_r788ahqs94a7h8gsrvv6 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_hn6jvjntd1rb1y79tf29, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_hn6jvjntd1rb1y79tf29 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_xzg5446ypgx6jzg50kvj, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_xzg5446ypgx6jzg50kvj { text-align: left }
-    #tinytable_musp3ubai0h0wiphh5jn td.tinytable_css_t2x6a312kylv5qvw3gce, #tinytable_musp3ubai0h0wiphh5jn th.tinytable_css_t2x6a312kylv5qvw3gce {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_t29sm0m4g794zg7je8kx, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_t29sm0m4g794zg7je8kx {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_5xgl6adm8djeusje1dlx, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_5xgl6adm8djeusje1dlx {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_al4v9ri5xkab1n1kpvfg, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_al4v9ri5xkab1n1kpvfg { text-align: center }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_d0g36p59d5a2rkl996ay, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_d0g36p59d5a2rkl996ay {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_9v8pcq6elqrbxz3jymx7, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_9v8pcq6elqrbxz3jymx7 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_62jlrpmpg2kt0kaizsa1, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_62jlrpmpg2kt0kaizsa1 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_83vyv8mamuc68nlzyqog, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_83vyv8mamuc68nlzyqog { text-align: left }
+    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_8jobqwcl5otdnk2tdjzr, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_8jobqwcl5otdnk2tdjzr {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_musp3ubai0h0wiphh5jn" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_y2hnvt6wl2tiqyupykk7" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
-                <th scope="col" data-row="0" data-col="2">seed12487</th>
-                <th scope="col" data-row="0" data-col="3">seed17929</th>
-                <th scope="col" data-row="0" data-col="4">seed28327</th>
-                <th scope="col" data-row="0" data-col="5">seed63595</th>
-                <th scope="col" data-row="0" data-col="6">seed85886</th>
-                <th scope="col" data-row="0" data-col="7">median-of-medians (S=5)</th>
+                <th scope="col" data-row="0" data-col="2">seed=12487</th>
+                <th scope="col" data-row="0" data-col="3">seed=17929</th>
+                <th scope="col" data-row="0" data-col="4">seed=28327</th>
+                <th scope="col" data-row="0" data-col="5">seed=63595</th>
+                <th scope="col" data-row="0" data-col="6">seed=85886</th>
+                <th scope="col" data-row="0" data-col="7">median agg. (S=5)</th>
               </tr>
         </thead>
         &#10;        <tbody>
                 <tr>
-                  <td data-row="1" data-col="1">log(reward)</td>
+                  <td data-row="1" data-col="1">theta (resid_Y ~ resid_D)</td>
                   <td data-row="1" data-col="2">−0.033</td>
                   <td data-row="1" data-col="3">−0.037</td>
                   <td data-row="1" data-col="4">−0.073</td>
@@ -92,15 +87,15 @@ Table 1: Per-seed estimates and median-of-medians aggregation for the baseline 
                 </tr>
                 <tr>
                   <td data-row="2" data-col="1"></td>
-                  <td data-row="2" data-col="2">(0.135)</td>
-                  <td data-row="2" data-col="3">(0.173)</td>
-                  <td data-row="2" data-col="4">(0.233)</td>
-                  <td data-row="2" data-col="5">(0.306)</td>
-                  <td data-row="2" data-col="6">(0.148)</td>
-                  <td data-row="2" data-col="7">(0.174)</td>
+                  <td data-row="2" data-col="2">(0.013)</td>
+                  <td data-row="2" data-col="3">(0.017)</td>
+                  <td data-row="2" data-col="4">(0.022)</td>
+                  <td data-row="2" data-col="5">(0.030)</td>
+                  <td data-row="2" data-col="6">(0.014)</td>
+                  <td data-row="2" data-col="7">(0.029)</td>
                 </tr>
                 <tr>
-                  <td data-row="3" data-col="1">n</td>
+                  <td data-row="3" data-col="1">N</td>
                   <td data-row="3" data-col="2">258352</td>
                   <td data-row="3" data-col="3">258352</td>
                   <td data-row="3" data-col="4">258352</td>
@@ -109,22 +104,58 @@ Table 1: Per-seed estimates and median-of-medians aggregation for the baseline 
                   <td data-row="3" data-col="7">258352</td>
                 </tr>
                 <tr>
-                  <td data-row="4" data-col="1">R²(Y|X)</td>
-                  <td data-row="4" data-col="2">0.867</td>
-                  <td data-row="4" data-col="3">0.862</td>
-                  <td data-row="4" data-col="4">0.863</td>
-                  <td data-row="4" data-col="5">0.856</td>
-                  <td data-row="4" data-col="6">0.861</td>
-                  <td data-row="4" data-col="7">0.862</td>
+                  <td data-row="4" data-col="1">S (replications)</td>
+                  <td data-row="4" data-col="2"></td>
+                  <td data-row="4" data-col="3"></td>
+                  <td data-row="4" data-col="4"></td>
+                  <td data-row="4" data-col="5"></td>
+                  <td data-row="4" data-col="6"></td>
+                  <td data-row="4" data-col="7">5</td>
                 </tr>
                 <tr>
-                  <td data-row="5" data-col="1">R²(D|X)</td>
-                  <td data-row="5" data-col="2">0.750</td>
-                  <td data-row="5" data-col="3">0.719</td>
-                  <td data-row="5" data-col="4">0.742</td>
-                  <td data-row="5" data-col="5">0.744</td>
-                  <td data-row="5" data-col="6">0.756</td>
-                  <td data-row="5" data-col="7">0.744</td>
+                  <td data-row="5" data-col="1">R^2 outcome eq.</td>
+                  <td data-row="5" data-col="2">0.867</td>
+                  <td data-row="5" data-col="3">0.862</td>
+                  <td data-row="5" data-col="4">0.864</td>
+                  <td data-row="5" data-col="5">0.856</td>
+                  <td data-row="5" data-col="6">0.861</td>
+                  <td data-row="5" data-col="7">0.862</td>
+                </tr>
+                <tr>
+                  <td data-row="6" data-col="1">R^2 treatment eq.</td>
+                  <td data-row="6" data-col="2">0.750</td>
+                  <td data-row="6" data-col="3">0.720</td>
+                  <td data-row="6" data-col="4">0.746</td>
+                  <td data-row="6" data-col="5">0.744</td>
+                  <td data-row="6" data-col="6">0.756</td>
+                  <td data-row="6" data-col="7">0.743</td>
+                </tr>
+                <tr>
+                  <td data-row="7" data-col="1">K</td>
+                  <td data-row="7" data-col="2">3</td>
+                  <td data-row="7" data-col="3">3</td>
+                  <td data-row="7" data-col="4">3</td>
+                  <td data-row="7" data-col="5">3</td>
+                  <td data-row="7" data-col="6">3</td>
+                  <td data-row="7" data-col="7"></td>
+                </tr>
+                <tr>
+                  <td data-row="8" data-col="1">Learner</td>
+                  <td data-row="8" data-col="2">9</td>
+                  <td data-row="8" data-col="3">9</td>
+                  <td data-row="8" data-col="4">9</td>
+                  <td data-row="8" data-col="5">9</td>
+                  <td data-row="8" data-col="6">9</td>
+                  <td data-row="8" data-col="7"></td>
+                </tr>
+                <tr>
+                  <td data-row="9" data-col="1">Fold seed</td>
+                  <td data-row="9" data-col="2">12487</td>
+                  <td data-row="9" data-col="3">17929</td>
+                  <td data-row="9" data-col="4">28327</td>
+                  <td data-row="9" data-col="5">63595</td>
+                  <td data-row="9" data-col="6">85886</td>
+                  <td data-row="9" data-col="7"></td>
                 </tr>
         </tbody>
       </table>
@@ -133,39 +164,44 @@ Table 1: Per-seed estimates and median-of-medians aggregation for the baseline 
 
 </div>
 
-The single-seed estimates span a non-trivial range relative to any individual seed’s SE, so sample-split randomness has a noticeable impact in finite samples. The median-of-medians point estimate is the inference-bearing number we carry into the cross-set comparisons below.
+To avoid unnecessary reliance on a single draw, **we recommend repeating the cross-fitting multiple times and reporting the median- (or mean-) aggregated estimate**. The median-aggregate estimate can be calculated as:
 
-## 2. Pairwise baseline-vs-variant comparisons
+$$\hat\theta_0^{\text{median}} = \mathrm{median}\bigl\{\hat\theta_{0,s}\bigr\}_{s=1}^{S},\qquad
+\widehat{\mathrm{s.e.}}^{\text{median}} \;=\; \sqrt{\mathrm{median}\bigl\{\widehat{\mathrm{s.e.}}_s^{\,2} + (\hat\theta_{0,s} - \hat\theta_0^{\text{median}})^2\bigr\}_{s=1}^{S}}.$$
 
-Each subsection below holds the baseline fixed and varies one knob. Every column is a median-of-medians over the same five seeds, so within-table differences reflect the knob rather than seed noise. R² rows are the median across seeds of the cross-fitted $R^2$ for that learner.
+The rationale for reporting an aggregated estimate (shown above in the last column) is that it provides an intuitive summary of DDML estimates that is less susceptible to particular random draws.
 
-### 2.1 Choice of nuisance learner
+### Fold-clustering by recruiter or by observation
 
-<div id="tbl-learner">
+In the Ipeirotis data, some recruiters have many postings. The same recruiter’s postings may share unobserved features that correlate with both posted reward and duration until acceptance.
 
-Table 2: Baseline (XGB 3) vs. CV-Lasso, both aggregated over S = 5 seeds. K = 3 recruiter-honest folds; cluster-robust SE.
+The table below investigates the impact of random fold construction by recruiter versus by observation on the DDML estimate and its standard error:
+
+<div id="tbl-S2-folds">
+
+Table 2: Table S.2 replica. Recruiter-honest folds with cluster-robust SE vs. IID folds. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner.
 <!-- preamble start -->
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_q5f8bvb7uylkeb8fx2rq = TinyTable.createTableFunctions("tinytable_q5f8bvb7uylkeb8fx2rq");
+      const tableFns_1e62ggzt0t2cwhhvhx39 = TinyTable.createTableFunctions("tinytable_1e62ggzt0t2cwhhvhx39");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '5', j: 2 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_g3km4xwlma10dm5b0wwv',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_z765n4hoixyukbp21qoj',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 } ], css_id: 'tinytable_css_rk6yrc7goevjiu1qp53l',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_1nugc7er97u9sep25woa',}, 
-          { positions: [ { i: '5', j: 1 } ], css_id: 'tinytable_css_2zy4x6d7nigakp326ou3',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_mxq9uoy3cv0c75xj7lf2',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 } ], css_id: 'tinytable_css_lp844hwmu1m97s6v3jl5',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_o3v18xs2yfg9ec4frs9h',}, 
+          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_wjl6lvkbr3p7fxkwel72',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_i3bgulzi0fhstbyjzdcl',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_lw0z302wuj04msc7nzhu',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_idsdo2yg03l3v7q3uvwr',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_d427b0xy2noyoo8hzqyn',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_gs91vvikmhwtzmn9rg5h',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_f3vjha64up0bau2hn4ry',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_820f3nq44k6vcnvoavax',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_q5f8bvb7uylkeb8fx2rq.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_1e62ggzt0t2cwhhvhx39.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -173,104 +209,17 @@ Table 2: Baseline (XGB 3) vs. CV-Lasso, both aggregated over S = 5 seeds. K = 
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_g3km4xwlma10dm5b0wwv, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_g3km4xwlma10dm5b0wwv {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_z765n4hoixyukbp21qoj, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_z765n4hoixyukbp21qoj {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_rk6yrc7goevjiu1qp53l, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_rk6yrc7goevjiu1qp53l { text-align: center }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_1nugc7er97u9sep25woa, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_1nugc7er97u9sep25woa {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_2zy4x6d7nigakp326ou3, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_2zy4x6d7nigakp326ou3 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_mxq9uoy3cv0c75xj7lf2, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_mxq9uoy3cv0c75xj7lf2 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_lp844hwmu1m97s6v3jl5, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_lp844hwmu1m97s6v3jl5 { text-align: left }
-    #tinytable_q5f8bvb7uylkeb8fx2rq td.tinytable_css_o3v18xs2yfg9ec4frs9h, #tinytable_q5f8bvb7uylkeb8fx2rq th.tinytable_css_o3v18xs2yfg9ec4frs9h {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_wjl6lvkbr3p7fxkwel72, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_wjl6lvkbr3p7fxkwel72 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_i3bgulzi0fhstbyjzdcl, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_i3bgulzi0fhstbyjzdcl {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_lw0z302wuj04msc7nzhu, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_lw0z302wuj04msc7nzhu { text-align: center }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_idsdo2yg03l3v7q3uvwr, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_idsdo2yg03l3v7q3uvwr {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_d427b0xy2noyoo8hzqyn, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_d427b0xy2noyoo8hzqyn {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_gs91vvikmhwtzmn9rg5h, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_gs91vvikmhwtzmn9rg5h {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_f3vjha64up0bau2hn4ry, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_f3vjha64up0bau2hn4ry { text-align: left }
+    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_820f3nq44k6vcnvoavax, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_820f3nq44k6vcnvoavax {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_q5f8bvb7uylkeb8fx2rq" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
-        &#10;        <thead>
-              <tr>
-                <th scope="col" data-row="0" data-col="1"> </th>
-                <th scope="col" data-row="0" data-col="2">XGB 3 (baseline)</th>
-                <th scope="col" data-row="0" data-col="3">CV-Lasso</th>
-              </tr>
-        </thead>
-        &#10;        <tbody>
-                <tr>
-                  <td data-row="1" data-col="1">log(reward)</td>
-                  <td data-row="1" data-col="2">−0.061</td>
-                  <td data-row="1" data-col="3">−0.008</td>
-                </tr>
-                <tr>
-                  <td data-row="2" data-col="1"></td>
-                  <td data-row="2" data-col="2">(0.174)</td>
-                  <td data-row="2" data-col="3">(0.522)</td>
-                </tr>
-                <tr>
-                  <td data-row="3" data-col="1">n</td>
-                  <td data-row="3" data-col="2">258352</td>
-                  <td data-row="3" data-col="3">258352</td>
-                </tr>
-                <tr>
-                  <td data-row="4" data-col="1">R²(Y|X)</td>
-                  <td data-row="4" data-col="2">0.862</td>
-                  <td data-row="4" data-col="3">0.679</td>
-                </tr>
-                <tr>
-                  <td data-row="5" data-col="1">R²(D|X)</td>
-                  <td data-row="5" data-col="2">0.744</td>
-                  <td data-row="5" data-col="3">0.728</td>
-                </tr>
-        </tbody>
-      </table>
-    </div>
-<!-- hack to avoid NA insertion in last line -->
-
-</div>
-
-The CV-Lasso column underperforms badly on both $R^2(Y\mid X)$ and $R^2(D\mid X)$ — a learner that does not fit cannot debias, and the DDML paper’s Table 5 documents a much sharper version of this pattern across twelve candidate learners. The cleanest way to sidestep the choice is short-stacking: regress $Y$ and $D$ on the cross-fitted predicted values of every candidate learner under non-negative weights summing to one. Table 6 of the paper reports stacked DDML at $\hat\theta_0 = -0.054$ (s.e. $0.020$); the stacking weights load almost entirely on the three XGBoost specifications, so when XGBoost dominates the linear alternatives — as it does here — stacking inherits its performance for free.
-
-### 2.2 Cluster-respecting vs IID folds
-
-<div id="tbl-folds">
-
-Table 3: Baseline (recruiter-honest folds, cluster-robust SE) vs. IID folds with het-robust SE. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner.
-<!-- preamble start -->
-&#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
-&#10;    <script>
-      // Create table-specific functions using external factory
-      const tableFns_fuarcyrysf6dyshowohm = TinyTable.createTableFunctions("tinytable_fuarcyrysf6dyshowohm");
-      // tinytable span after
-      window.addEventListener('load', function () {
-          var cellsToStyle = [
-            // tinytable style arrays after
-          { positions: [ { i: '5', j: 2 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_rmrcb84sx2rl7nzpdf9p',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_5oo2c54ixijd94muo6py',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 } ], css_id: 'tinytable_css_uiuv5rma3s676ke0juud',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_pr8sc5mgeinsm5zk5go8',}, 
-          { positions: [ { i: '5', j: 1 } ], css_id: 'tinytable_css_3b9iwxh0o9ex73lgli1d',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_h1jz2vm1l0t5g7nz8zre',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 } ], css_id: 'tinytable_css_t31fdi9qdtogizwxrrzh',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_xym8gs0c59ag4unsfcco',}, 
-          ];
-&#10;          // Loop over the arrays to style the cells
-          cellsToStyle.forEach(function (group) {
-              group.positions.forEach(function (cell) {
-                  tableFns_fuarcyrysf6dyshowohm.styleCell(cell.i, cell.j, group.css_id);
-              });
-          });
-      });
-    </script>
-&#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
-    <style>
-    /* tinytable css entries after */
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_rmrcb84sx2rl7nzpdf9p, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_rmrcb84sx2rl7nzpdf9p {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_5oo2c54ixijd94muo6py, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_5oo2c54ixijd94muo6py {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_uiuv5rma3s676ke0juud, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_uiuv5rma3s676ke0juud { text-align: center }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_pr8sc5mgeinsm5zk5go8, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_pr8sc5mgeinsm5zk5go8 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_3b9iwxh0o9ex73lgli1d, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_3b9iwxh0o9ex73lgli1d {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_h1jz2vm1l0t5g7nz8zre, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_h1jz2vm1l0t5g7nz8zre {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_t31fdi9qdtogizwxrrzh, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_t31fdi9qdtogizwxrrzh { text-align: left }
-    #tinytable_fuarcyrysf6dyshowohm td.tinytable_css_xym8gs0c59ag4unsfcco, #tinytable_fuarcyrysf6dyshowohm th.tinytable_css_xym8gs0c59ag4unsfcco {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    </style>
-    <div class="container">
-      <table class="tinytable" id="tinytable_fuarcyrysf6dyshowohm" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_1e62ggzt0t2cwhhvhx39" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -280,29 +229,34 @@ Table 3: Baseline (recruiter-honest folds, cluster-robust SE) vs. IID folds wi
         </thead>
         &#10;        <tbody>
                 <tr>
-                  <td data-row="1" data-col="1">log(reward)</td>
+                  <td data-row="1" data-col="1">theta (resid_Y ~ resid_D)</td>
                   <td data-row="1" data-col="2">−0.061</td>
                   <td data-row="1" data-col="3">−0.042</td>
                 </tr>
                 <tr>
                   <td data-row="2" data-col="1"></td>
-                  <td data-row="2" data-col="2">(0.174)</td>
-                  <td data-row="2" data-col="3">(0.004)</td>
+                  <td data-row="2" data-col="2">(0.029)</td>
+                  <td data-row="2" data-col="3">(0.006)</td>
                 </tr>
                 <tr>
-                  <td data-row="3" data-col="1">n</td>
+                  <td data-row="3" data-col="1">N</td>
                   <td data-row="3" data-col="2">258352</td>
                   <td data-row="3" data-col="3">258352</td>
                 </tr>
                 <tr>
-                  <td data-row="4" data-col="1">R²(Y|X)</td>
-                  <td data-row="4" data-col="2">0.862</td>
-                  <td data-row="4" data-col="3">0.892</td>
+                  <td data-row="4" data-col="1">S (replications)</td>
+                  <td data-row="4" data-col="2">5</td>
+                  <td data-row="4" data-col="3">5</td>
                 </tr>
                 <tr>
-                  <td data-row="5" data-col="1">R²(D|X)</td>
-                  <td data-row="5" data-col="2">0.744</td>
-                  <td data-row="5" data-col="3">0.878</td>
+                  <td data-row="5" data-col="1">R^2 outcome eq.</td>
+                  <td data-row="5" data-col="2">0.862</td>
+                  <td data-row="5" data-col="3">0.892</td>
+                </tr>
+                <tr>
+                  <td data-row="6" data-col="1">R^2 treatment eq.</td>
+                  <td data-row="6" data-col="2">0.743</td>
+                  <td data-row="6" data-col="3">0.877</td>
                 </tr>
         </tbody>
       </table>
@@ -311,7 +265,9 @@ Table 3: Baseline (recruiter-honest folds, cluster-robust SE) vs. IID folds wi
 
 </div>
 
-This is the sweep where leaving the default behind is the point. The Ipeirotis cross-section has many postings per recruiter, and the same recruiter’s HITs share unobserved features (recruiter style, payout norms, qualification preferences) that correlate with both posted reward and fill time. Splitting at the observation level lets siblings from the same recruiter sit on both sides of the fold boundary — making the residuals look more independent than they are, and the cross-fitted $R^2$ look better than the true generalisation $R^2$. In `ddml_plm` the lever is whether `cluster_variable` is supplied; passing the recruiter id forms recruiter-honest folds and clusters SEs at the same level; omitting it gives random IID folds and uses heteroskedasticity-robust SEs:
+We find that the cross-fitted $R^2$ values drop noticeably when moving from IID to recruiter folds. The likely reason is that splitting at the observation level lets postings from the same recruiter appear in different folds, making out-of-sample predictions look more precise than they are. This in turn might bias the DDML estimates. To avoid this, **we recommend forming folds that acknowledge the dependence structure of the data**.
+
+The R package `ddml` allows for automatic fold splitting by cluster using the `cluster_variable` option. The option also ensures standard errors are clustered at the same level:
 
 ``` r
 fit <- ddml_plm(
@@ -325,35 +281,37 @@ fit <- ddml_plm(
 )
 ```
 
-The cross-fitted $R^2$ values typically *fall* when fold construction moves from IID to recruiter-honest, because the held-out fold now contains recruiters the nuisance learner never saw — that is the honest predictive performance and it is what should enter the DDML score. The standard error typically *rises*, because clustering at the recruiter level accounts for the correlated residuals that het-robust ignores. The cluster-honest combination is the inference-bearing one for this application, which is why Entries 1–2 and the baseline of this post use it as their default.
+### Number of folds $K$
 
-### 2.3 Number of folds $K$
+Cross-fitting theory accommodates any fixed number of cross-fitting folds $K$, but in practice results may vary depending on the choice of $K$, especially when the sample size is small. In the paper, **we recommend the largest $K$ consistent with available computing resources, plus a sensitivity check**.
 
-<div id="tbl-K">
+The table below compares the baseline $K = 3$ specification against $K = 5$, both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
 
-Table 4: Baseline K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE.
+<div id="tbl-S3-K">
+
+Table 3: Table S.3 replica. K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE.
 <!-- preamble start -->
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_i5ei7d2lvuiso3ni5i8f = TinyTable.createTableFunctions("tinytable_i5ei7d2lvuiso3ni5i8f");
+      const tableFns_obgop859n037s1oo7m67 = TinyTable.createTableFunctions("tinytable_obgop859n037s1oo7m67");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '5', j: 2 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_hbhkrwao2adjw3h4doqq',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_txagbnir35t0z81mdhyu',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 } ], css_id: 'tinytable_css_22haf9oeagxntfxp7680',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_zimx553826e5s1i1d8uu',}, 
-          { positions: [ { i: '5', j: 1 } ], css_id: 'tinytable_css_x2tx115egprgw9mkrqql',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_8z7ordm200gft74k2p9c',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 } ], css_id: 'tinytable_css_l3z4ka79m50c3xrj3x04',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_l9mx4hqh4ykbpnrbhp7i',}, 
+          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_pnfdfmrpq57l9cbiq5nm',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_21ndwbbirktrj7cmo56b',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_86qqjjk1ecgwxgvw1n05',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_xt4jy1p58vdwpwarjhpt',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_7s3txrvtp1f4j6lsxwrn',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_4h5ynewiag7xvkc8jlmf',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_wsfmyaex1f0e98avas51',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_qt9mlxgucpou39jns1kx',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_i5ei7d2lvuiso3ni5i8f.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_obgop859n037s1oo7m67.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -361,17 +319,17 @@ Table 4: Baseline K = 3 vs. K = 5. Both columns are median-of-medians over S =
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_hbhkrwao2adjw3h4doqq, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_hbhkrwao2adjw3h4doqq {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_txagbnir35t0z81mdhyu, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_txagbnir35t0z81mdhyu {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_22haf9oeagxntfxp7680, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_22haf9oeagxntfxp7680 { text-align: center }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_zimx553826e5s1i1d8uu, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_zimx553826e5s1i1d8uu {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_x2tx115egprgw9mkrqql, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_x2tx115egprgw9mkrqql {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_8z7ordm200gft74k2p9c, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_8z7ordm200gft74k2p9c {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_l3z4ka79m50c3xrj3x04, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_l3z4ka79m50c3xrj3x04 { text-align: left }
-    #tinytable_i5ei7d2lvuiso3ni5i8f td.tinytable_css_l9mx4hqh4ykbpnrbhp7i, #tinytable_i5ei7d2lvuiso3ni5i8f th.tinytable_css_l9mx4hqh4ykbpnrbhp7i {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_pnfdfmrpq57l9cbiq5nm, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_pnfdfmrpq57l9cbiq5nm {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_21ndwbbirktrj7cmo56b, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_21ndwbbirktrj7cmo56b {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_86qqjjk1ecgwxgvw1n05, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_86qqjjk1ecgwxgvw1n05 { text-align: center }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_xt4jy1p58vdwpwarjhpt, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_xt4jy1p58vdwpwarjhpt {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_7s3txrvtp1f4j6lsxwrn, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_7s3txrvtp1f4j6lsxwrn {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_4h5ynewiag7xvkc8jlmf, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_4h5ynewiag7xvkc8jlmf {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_wsfmyaex1f0e98avas51, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_wsfmyaex1f0e98avas51 { text-align: left }
+    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_qt9mlxgucpou39jns1kx, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_qt9mlxgucpou39jns1kx {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_i5ei7d2lvuiso3ni5i8f" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_obgop859n037s1oo7m67" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -381,29 +339,34 @@ Table 4: Baseline K = 3 vs. K = 5. Both columns are median-of-medians over S =
         </thead>
         &#10;        <tbody>
                 <tr>
-                  <td data-row="1" data-col="1">log(reward)</td>
+                  <td data-row="1" data-col="1">theta (resid_Y ~ resid_D)</td>
                   <td data-row="1" data-col="2">−0.061</td>
                   <td data-row="1" data-col="3">−0.050</td>
                 </tr>
                 <tr>
                   <td data-row="2" data-col="1"></td>
-                  <td data-row="2" data-col="2">(0.174)</td>
-                  <td data-row="2" data-col="3">(0.243)</td>
+                  <td data-row="2" data-col="2">(0.029)</td>
+                  <td data-row="2" data-col="3">(0.029)</td>
                 </tr>
                 <tr>
-                  <td data-row="3" data-col="1">n</td>
+                  <td data-row="3" data-col="1">N</td>
                   <td data-row="3" data-col="2">258352</td>
                   <td data-row="3" data-col="3">258352</td>
                 </tr>
                 <tr>
-                  <td data-row="4" data-col="1">R²(Y|X)</td>
-                  <td data-row="4" data-col="2">0.862</td>
-                  <td data-row="4" data-col="3">0.864</td>
+                  <td data-row="4" data-col="1">S (replications)</td>
+                  <td data-row="4" data-col="2">5</td>
+                  <td data-row="4" data-col="3">5</td>
                 </tr>
                 <tr>
-                  <td data-row="5" data-col="1">R²(D|X)</td>
-                  <td data-row="5" data-col="2">0.744</td>
-                  <td data-row="5" data-col="3">0.741</td>
+                  <td data-row="5" data-col="1">R^2 outcome eq.</td>
+                  <td data-row="5" data-col="2">0.862</td>
+                  <td data-row="5" data-col="3">0.863</td>
+                </tr>
+                <tr>
+                  <td data-row="6" data-col="1">R^2 treatment eq.</td>
+                  <td data-row="6" data-col="2">0.743</td>
+                  <td data-row="6" data-col="3">0.739</td>
                 </tr>
         </tbody>
       </table>
@@ -412,15 +375,119 @@ Table 4: Baseline K = 3 vs. K = 5. Both columns are median-of-medians over S =
 
 </div>
 
-Cross-fitting theory accommodates any fixed $K$. Velez (2024) shows performance improves with more folds, peaking at $K = n$ with diminishing returns. In the paper we recommend the largest $K$ consistent with available compute, plus a sensitivity check. Moving from $K = 3$ to $K = 5$ trains each nuisance fit on $4/5$ of the data instead of $2/3$ and compute scales roughly linearly. With $n \approx 258{,}000$ either value is in the range where the bias–variance tradeoff is favourable.
+We find the results to be fairly robust to the choice of $K$, with the $K=5$ specification yielding a slightly smaller point estimate in magnitude.
 
-## 3. What to take away
+## The choice of learner: XGBoost vs CV-Lasso
 
-- A single ML learner is not a complete DDML specification. The point estimate is informative only when the nuisance learner can actually predict — cross-fitted $R^2$ is the diagnostic to lean on.
-- Short-stacking (or, more conservatively, reporting both stacking and single-best) sidesteps the learner-selection problem and is cheap relative to refitting four nuisance models from scratch.
-- Median-of-medians over $S \ge 3$ seeds is the inference-bearing point estimate; one-seed numbers are fine for iteration but should not be the published number.
-- Cluster vs IID fold construction is the design decision with the largest swing in SE and the most consequential one for inference. The blog defaults to recruiter-honest folds + cluster-robust SEs; the IID variant is included only as a contrast.
-- $K$ matters less than the other knobs in this application.
+So far, we have exclusively relied on a particular XGBoost learner for illustration.
+
+The choice of nuisance function estimator is consequential for DDML estimation. Poorly chosen or poorly tuned learners can yield misleading DDML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
+
+<div id="tbl-xgb-vs-lasso">
+
+Table 4: XGB 3 vs. CV-Lasso, both median-aggregated over S = 5 seeds. K = 3 recruiter-honest folds; cluster-robust SE.
+<!-- preamble start -->
+&#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
+&#10;    <script>
+      // Create table-specific functions using external factory
+      const tableFns_2x5jntabb0sjbv1zwfug = TinyTable.createTableFunctions("tinytable_2x5jntabb0sjbv1zwfug");
+      // tinytable span after
+      window.addEventListener('load', function () {
+          var cellsToStyle = [
+            // tinytable style arrays after
+          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_r56epl3mu3f7bwrk9fsp',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_8gabeppeqnji2nore99u',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_xbc77rghckbw36n4wsc3',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_yly7fkycm2ef3b9ylahi',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_xjzruq48krtmc42z0b6t',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_7cu9ifwytyu0vdizoilf',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_rlmzur177ckcfsiskopj',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_jxd4f7wzbytd4gbvbtfi',}, 
+          ];
+&#10;          // Loop over the arrays to style the cells
+          cellsToStyle.forEach(function (group) {
+              group.positions.forEach(function (cell) {
+                  tableFns_2x5jntabb0sjbv1zwfug.styleCell(cell.i, cell.j, group.css_id);
+              });
+          });
+      });
+    </script>
+&#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
+    <style>
+    /* tinytable css entries after */
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_r56epl3mu3f7bwrk9fsp, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_r56epl3mu3f7bwrk9fsp {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_8gabeppeqnji2nore99u, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_8gabeppeqnji2nore99u {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_xbc77rghckbw36n4wsc3, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_xbc77rghckbw36n4wsc3 { text-align: center }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_yly7fkycm2ef3b9ylahi, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_yly7fkycm2ef3b9ylahi {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_xjzruq48krtmc42z0b6t, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_xjzruq48krtmc42z0b6t {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_7cu9ifwytyu0vdizoilf, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_7cu9ifwytyu0vdizoilf {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_rlmzur177ckcfsiskopj, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_rlmzur177ckcfsiskopj { text-align: left }
+    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_jxd4f7wzbytd4gbvbtfi, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_jxd4f7wzbytd4gbvbtfi {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    </style>
+    <div class="container">
+      <table class="tinytable" id="tinytable_2x5jntabb0sjbv1zwfug" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+        &#10;        <thead>
+              <tr>
+                <th scope="col" data-row="0" data-col="1"> </th>
+                <th scope="col" data-row="0" data-col="2">XGB 3 (median agg.)</th>
+                <th scope="col" data-row="0" data-col="3">CV-Lasso (median agg.)</th>
+              </tr>
+        </thead>
+        &#10;        <tbody>
+                <tr>
+                  <td data-row="1" data-col="1">theta (resid_Y ~ resid_D)</td>
+                  <td data-row="1" data-col="2">−0.061</td>
+                  <td data-row="1" data-col="3">−0.008</td>
+                </tr>
+                <tr>
+                  <td data-row="2" data-col="1"></td>
+                  <td data-row="2" data-col="2">(0.029)</td>
+                  <td data-row="2" data-col="3">(0.066)</td>
+                </tr>
+                <tr>
+                  <td data-row="3" data-col="1">N</td>
+                  <td data-row="3" data-col="2">258352</td>
+                  <td data-row="3" data-col="3">258352</td>
+                </tr>
+                <tr>
+                  <td data-row="4" data-col="1">S (replications)</td>
+                  <td data-row="4" data-col="2">5</td>
+                  <td data-row="4" data-col="3">5</td>
+                </tr>
+                <tr>
+                  <td data-row="5" data-col="1">R^2 outcome eq.</td>
+                  <td data-row="5" data-col="2">0.862</td>
+                  <td data-row="5" data-col="3">0.680</td>
+                </tr>
+                <tr>
+                  <td data-row="6" data-col="1">R^2 treatment eq.</td>
+                  <td data-row="6" data-col="2">0.743</td>
+                  <td data-row="6" data-col="3">0.724</td>
+                </tr>
+        </tbody>
+      </table>
+    </div>
+<!-- hack to avoid NA insertion in last line -->
+
+</div>
+
+CV-Lasso underperforms badly on both $R^2(Y\mid X)$ and $R^2(D\mid X)$, and the resulting estimate is indistinguishable from zero. A priori one would not know whether the relevant DGP favors boosted trees or a sparse linear model, so committing to a single learner without validation is fragile.
+
+## How to select and validate the nuisance learner?
+
+In Section 6 of the paper, we discuss **three recommended options for constructing and validating nuisance function estimators**:
+
+1.  Consider performance metrics based on cross-fitted predicted values (e.g., cross-fitted $R^2$), which allow selecting the best-performing learner for each nuisance function separately.
+2.  Use formal inference-based learner selection, e.g., the Cross-Validation with Confidence test of Lei (2020).
+3.  Use model averaging (stacking) to optimally combine candidate learners using non-negative least squares.
+
+We focus here on the third approach. For both the outcome and the treatment equation, we form a combination of learners by regressing $Y$ and $D$ on the cross-fitted predicted values of every candidate learner, subject to non-negative weights that sum to one. We refer to this approach as “short-stacking” to distinguish it from an alternative approach that re-estimates the stacking weights for each fold.
+
+Table 6 from the paper reports the stacked DDML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
+
+## What to take away
+
+Before reporting DDML results, it is essential to validate the nuisance function estimators and to question their performance. Other important implementation choices include the number of cross-fitting folds, the fold splitting scheme, and the aggregation method.
 
 ## References
 

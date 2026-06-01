@@ -18,7 +18,7 @@ The model is exactly the same as in <a href="{{ '/examples/Monopsony_DML' | rela
 $$\log(\text{duration}_i) \;=\; \theta_0 \cdot \log(\text{reward}_i) \;+\; g_0(X_i) \;+\; \varepsilon_i,
 \qquad E[\varepsilon_i \mid X_i, D_i] = 0.$$
 
-Only $X_i$ changes. We append the hand-engineered controls with embeddings, retrieved from a DeBERTa-v3 language model that we fine-tune to our setting.
+Only $X_i$ changes. We augment the hand-engineered controls with embeddings, retrieved from a DeBERTa-v3 language model that we fine-tune to our setting.
 
 In this part, we discuss two things: First, we explain what embeddings are, how fine-tuning works, and we describe our specific implementation choices. Second, we explain how the fine-tuning process is integrated into the DDML framework.
 
@@ -26,33 +26,33 @@ In this part, we discuss two things: First, we explain what embeddings are, how 
 
 ### Embeddings and choice of language model
 
-Embeddings are fixed-length vector representations of a string, retrieved from a language model such as a transformer. The appeal of using embeddings over hand-engineered features is that they can capture capture concepts that are not easily captures by manual coding. For example, the tasks “transcribe 20 audio clips” versus “label sentiment in 100 tweets” differ in cognitive load, reading time, and recruiter requirements in ways that ad-hoc engineered features may fail to capture.
+Embeddings are fixed-length vector representations of strings, retrieved from a language model such as a transformer. The appeal of using embeddings over hand-engineered features is that they can capture concepts that might be overlooked by manual coding. For example, the tasks “transcribe 20 audio clips” versus “label sentiment in 100 tweets” differ in cognitive load, reading time, and recruiter requirements in ways that ad-hoc engineered features may fail to capture.
 
-We specifically use the `[CLS]` token from DeBERTa-v3-base which gives us a 768-dimensional vector. We opt here for DeBERTa-v3-base because it is a small bi-directional encoder model that allows us to retrieve embeddings at low cost and fine-tune these to our specific context. Bi-directional here means that the `[CLS]` token accommodates dependencies across the entire string sequence, not only one-directional link from previous to subsequent tokens.
+We specifically use the `[CLS]` token from DeBERTa-v3-base, which gives us a 768-dimensional vector. We opt here for DeBERTa-v3-base because it is a small bi-directional encoder model that allows us to retrieve embeddings at low cost and fine-tune it to our specific context. “Bi-directional” here means that the `[CLS]` token accommodates dependencies across the entire string sequence, not just a one-directional link from previous to subsequent tokens.
 
 Larger reasoning models such as Qwen3 or Gemini are possible alternatives. They benefit from substantially more pretraining data and tend to produce better representations when there is limited training data and on tasks requiring nuanced reasoning. However, even the smallest Qwen3 embedding variant has roughly an order of magnitude more parameters than DeBERTa-v3-base, making both fine-tuning and inference markedly more expensive. In our setting, as we explain below, we need to repeat the fine-tuning process for each fold and outcome, which is why a smaller model such as DeBERTa-v3-base is attractive.
 
 ### How to fine-tune
 
-A pretrained language model is trained on a generic corpus with a general objective. Fine-tuning adapts the model parameters using contextual data. The language model acts as a backbone on which a small regression head is placed. In our context, we separately use the log reward and log duration as outcomes and link these to the text via a tokenizer (which converts strings to indices), a backbone language model (DeBERTa) and a regression head (linear regression). After fine-tuning, the regression head is discarded and only the embeddings are retrieved, which are used as inputs for a downstream machine learner.
+A pretrained language model is trained on a generic corpus with a general objective. Fine-tuning adapts the model parameters using contextual data. The language model acts as a backbone on which a small regression head is placed. In our context, we use log reward and log duration as separate outcomes and link these to the text via a tokenizer (which converts strings to indices), a backbone language model (DeBERTa) and a regression head (linear regression). After fine-tuning, the regression head is discarded and only the embeddings are retrieved, which are used as inputs for a downstream machine learner.
 
 ### LoRA, not full fine-tuning
 
-Full fine-tuning would update all 184M DeBERTa parameters. In total, we have to perform $2K \cdot S$ fine-tuning operations where $K=$ number of folds, $S=$ number of cross-fitting repetitions, and two outcomes. To further limit the computational complexity, we use Low-Rank Adaptation ([Hu et al., 2021](https://arxiv.org/abs/2106.09685)) instead of full fine tuning. LoRA freezes the pretrained weight matrices $W$ and inserts trainable rank-$r$ updates $\Delta W$ into the attention projections:
+Full fine-tuning would update all 184M DeBERTa parameters. To limit the computational complexity, we use Low-Rank Adaptation ([Hu et al., 2021](https://arxiv.org/abs/2106.09685)) instead of full fine-tuning. LoRA freezes the pretrained weight matrices $W$ and inserts trainable rank-$r$ updates $\Delta W$ into the attention projections:
 
 $$W_{\text{adapted}} \;=\; W_{\text{frozen}} \;+\; \Delta \underbrace{W}_{\text{trainable, rank } r}$$
 
-As a consequence, the LoRA fine-tuning process is much faster, while often yielding similar prediction peformance compared to full fine tuning.
+As a consequence, the LoRA fine-tuning process is much faster, while often yielding similar prediction performance compared to full fine-tuning.
 
 ### Fine-tuning implementation details
 
-A few implementation details: The text input is the concatenation of HIT title and description, tokenised by DeBERTa’s own SentencePiece tokeniser and truncated to 160 tokens. We train with the AdamW optimiser at learning rate $2 \times 10^{-4}$ (LoRA needs a higher LR than full fine-tuning because only the low-rank factors move), batch size 32, for three epochs.
+A few implementation details: The text input is the concatenation of HIT title and description, tokenized by DeBERTa’s own SentencePiece tokenizer and truncated to 160 tokens. We train with the AdamW optimizer at learning rate $2 \times 10^{-4}$ (LoRA needs a higher LR than full fine-tuning because only the low-rank factors move), batch size 32, for three epochs.
 
 ## Integrating fine-tuning into DDML
 
 How do we integrate fine-tuning into the DDML algorithm? A naive approach might proceed as follows: using the full sample, fine-tune DeBERTa separately on log reward and log duration, retrieve the fine-tuned embeddings, and use these as inputs along with hand-coded controls in the cross-fitting process.
 
-This approach, however, would produce predicted values that are not purely out-of-sample: we would violate the requirement that each data point is not used for both nuisance function estimation (which includes embedding estimation) and structural estimation.
+This approach, however, would produce predicted values that are not purely out-of-sample: we would violate the requirement that each data point not be used for both nuisance function estimation (which includes embedding estimation) and structural estimation.
 
 For the estimation process to remain leakage-free, we move the fine-tuning step inside the cross-fitting loop. The figure below walks through the procedure. We do this twice — once with $y = \log(\text{reward})$, once with $y = \log(\text{duration})$ — because each nuisance equation gets its own fine-tuned embeddings. Within each, we run a standard $K$-fold cross-fit. For every held-out fold $k$, the backbone is trained on the other $K-1$ folds only, its embeddings are concatenated with the hand-coded controls, and the downstream learner is fit on the training folds and used to predict on fold $k$.
 
@@ -76,9 +76,11 @@ For the estimation process to remain leakage-free, we move the fine-tuning step 
   </figcaption>
 </figure>
 
+In total, we perform $2K \cdot S$ fine-tuning operations where $K=$ number of folds and $S=$ number of cross-fitting repetitions; the factor of 2 reflects the two outcomes.
+
 ### Implementation of DML
 
-For practical reasons, we perform the fine-tuning step in Python (saving the embeddings for each $k$ and outcome), but the downstream nuisance function estimation and structural parameter estimation in R. The code below illustrates the implementation of cross-fitting in R for log duration and cross-fitting iteration $k$:
+For practical reasons, we perform the fine-tuning step in Python (saving the embeddings for each $k$ and outcome), but do the downstream nuisance function estimation and structural parameter estimation in R. The code below illustrates the implementation of cross-fitting in R for log duration and cross-fitting iteration $k$:
 
 ``` r
 # retrieve fine-tuned embeddings (generated in Python & stored locally)
@@ -119,7 +121,7 @@ fit_ols <- feols(resid_log_duration ~ resid_log_reward,
                   cluster = ~ requester_id)
 ```
 
-## 4. Result
+## Result
 
 <div id="tbl-result">
 
@@ -128,24 +130,24 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_952zkgjlaz4bz7zy5hwb = TinyTable.createTableFunctions("tinytable_952zkgjlaz4bz7zy5hwb");
+      const tableFns_ud7iqj2d3s9alb0jivel = TinyTable.createTableFunctions("tinytable_ud7iqj2d3s9alb0jivel");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_7mhzkhpurbzbct0jfyth',}, 
-          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_49tj9y484q2n85jpa66l',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_b4unq8cm9qgw34z7epyx',}, 
-          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_qhpedgbll4hkj5vrfyfl',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_4445z4kkhdu7xsfk6tk1',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_llccyraxnmz1y4f6b4p6',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_86nhgg4zwc9frl0y519g',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_mjftyebtaasxnz1uxmxd',}, 
+          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_dwchte6farv7z23teo1e',}, 
+          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_ev83wh1t8lehoqgrwsuh',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_dhmjtzee0qcoj4vj1si7',}, 
+          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_w68xburybjisawdfi0ni',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_stizac8d85rvwu7cjv54',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_6oq5gla6ivmsuxigluq0',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_pybr0bxk3nm6rjvo8rfj',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_uishdmwiy14dsb73jwdh',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_952zkgjlaz4bz7zy5hwb.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_ud7iqj2d3s9alb0jivel.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -153,17 +155,17 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_7mhzkhpurbzbct0jfyth, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_7mhzkhpurbzbct0jfyth {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_49tj9y484q2n85jpa66l, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_49tj9y484q2n85jpa66l {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_b4unq8cm9qgw34z7epyx, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_b4unq8cm9qgw34z7epyx { text-align: center }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_qhpedgbll4hkj5vrfyfl, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_qhpedgbll4hkj5vrfyfl {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_4445z4kkhdu7xsfk6tk1, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_4445z4kkhdu7xsfk6tk1 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_llccyraxnmz1y4f6b4p6, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_llccyraxnmz1y4f6b4p6 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_86nhgg4zwc9frl0y519g, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_86nhgg4zwc9frl0y519g { text-align: left }
-    #tinytable_952zkgjlaz4bz7zy5hwb td.tinytable_css_mjftyebtaasxnz1uxmxd, #tinytable_952zkgjlaz4bz7zy5hwb th.tinytable_css_mjftyebtaasxnz1uxmxd {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_dwchte6farv7z23teo1e, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_dwchte6farv7z23teo1e {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_ev83wh1t8lehoqgrwsuh, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_ev83wh1t8lehoqgrwsuh {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_dhmjtzee0qcoj4vj1si7, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_dhmjtzee0qcoj4vj1si7 { text-align: center }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_w68xburybjisawdfi0ni, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_w68xburybjisawdfi0ni {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_stizac8d85rvwu7cjv54, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_stizac8d85rvwu7cjv54 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_6oq5gla6ivmsuxigluq0, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_6oq5gla6ivmsuxigluq0 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_pybr0bxk3nm6rjvo8rfj, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_pybr0bxk3nm6rjvo8rfj { text-align: left }
+    #tinytable_ud7iqj2d3s9alb0jivel td.tinytable_css_uishdmwiy14dsb73jwdh, #tinytable_ud7iqj2d3s9alb0jivel th.tinytable_css_uishdmwiy14dsb73jwdh {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_952zkgjlaz4bz7zy5hwb" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_ud7iqj2d3s9alb0jivel" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -202,11 +204,13 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 
 </div>
 
-With the fine-tuned embeddings in $X$, the cross-fitted $R^2$ values are above 75% and 85%, and the cluster-robust standard error on $\hat\theta_0$ is tight enough for the point estimate to be unambiguously different from zero. $\hat\theta_0 \approx -0.066$ is in the same neighbourhood as column 9 of Table 5 (panel B) in the DDML paper. The two numbers do not coincide exactly: we here use an adapted code base, single cross-fitting seed, and column 9 of the paper is a *median-aggregated* estimate over $S = 5$ seeds.
+With the fine-tuned embeddings in $X$, the cross-fitted $R^2$ values are above 75% and 85%, and the cluster-robust standard error on $\hat\theta_0$ is tight enough for the point estimate to be unambiguously different from zero. $\hat\theta_0 \approx -0.066$ is in the same neighborhood as the estimate in column 9 of Table 5 (panel B) in the DDML paper.
 
-The third and final post, <a href="{{ '/examples/Monopsony_Robustness' | relative_url }}">Monopsony III</a> examines robustness of the headline estimate to the seed, the choice of nuisance learner, and the construction of the cross-fitting folds.
+The two numbers do not coincide exactly: here we use an adapted code base and a single cross-fitting seed, and column 9 of the paper is a *median-aggregated* estimate over $S = 5$ seeds.
 
-## 5. References
+The third and final post, <a href="{{ '/examples/Monopsony_Robustness' | relative_url }}">Monopsony III</a>, examines robustness of the headline estimate to the seed, the choice of nuisance learner, and the construction of the cross-fitting folds.
+
+## References
 
 - Ahrens, A., V. Chernozhukov, C. Hansen, D. Kozbur, M. Schaffer and T. Wiemann. *An Introduction to Double/Debiased Machine Learning.* (Working paper, this site.) §6 motivates the fine-tuned-embedding approach used here.
 - Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).

@@ -22,272 +22,308 @@ enable_copy_code_button: true
 #| include: false
 suppressPackageStartupMessages({
   library(knitr)
-  library(modelsummary)
+  library(arrow)
+  library(dplyr)
+  library(tidyr)
   library(stringr)
-  library(ddml)
+  library(purrr)
+  library(readr)
+  library(fixest)
+  library(tibble)
+  library(broom)
+  library(modelsummary)
 })
 
 # ---------------------------------------------------------------------------
-# Load per-seed intermediate results.
+# Residualised-DML pipeline used throughout this post.
 #
-# Walks each subfolder of monopsony_data/intermediate (currently iid_K3,
-# xclust_K3, xclust_K5), loads every cvc_seed*_K*.RData file via a fresh
-# environment, and exposes one named list per subfolder (keyed by seed).
-# Each list element contains the objects saved by Code/dube_monopsony/run_cvc.R
-# (fit, fit_cvc, diag_obj, diag_cvc, fitted_obj).
+# Reads the OOF prediction parquet files written by run_cvc.R
+#   (xfit_<outcome>_fold<f>_of<K>_learner<L>_foldseed<seed>.parquet),
+# joins them to the Ipeirotis cross-section, and runs
+#   feols(resid_Y ~ resid_D, cluster = ~requester_id)
+# per seed, then aggregates over seeds with the Chernozhukov et al. (2018)
+# median-of-medians formula.
+#
+# Learner integer codes follow the 12-learner order set in
+# Code/dube_monopsony/run_cvc.R:
+#   1 OLS, 2 CV-Lasso, 3 CV-Ridge,
+#   4-6 RF 1-3, 7-9 XGB 1-3, 10-12 NN 1-3.
+# We use learner = 9 (XGB 3) and learner = 2 (CV-Lasso) below.
 # ---------------------------------------------------------------------------
 
-intermediate_root <- '/Users/kahrens/PP Dropbox/Achim Ahrens/monopsony_data/dube_monopsony-selected/intermediate'
+MONOPSONY_ROOT <- "/Users/kahrens/PP Dropbox/Achim Ahrens/monopsony_data"
+XFIT_BASE      <- file.path(MONOPSONY_ROOT, "dube_monopsony-selected", "xfit")
+DATA_PATH      <- file.path(MONOPSONY_ROOT, "dube_monopsony", "Data")
 
-load_rdata_to_list <- function(file) {
-  env <- new.env()
-  load(file, envir = env)
-  as.list(env)
+FILE_PATTERN <- "^xfit_(.+)_fold(\\d+)_of(\\d+)_learner(\\d+)_foldseed(\\d+)\\.parquet$"
+
+parse_xfit_meta <- function(xfit_dir) {
+  files <- list.files(xfit_dir, pattern = "\\.parquet$", full.names = TRUE)
+  m <- str_match(basename(files), FILE_PATTERN)
+  tibble(
+    path     = files,
+    outcome  =            m[, 2],
+    fold     = as.integer(m[, 3]),
+    K        = as.integer(m[, 4]),
+    learner  = as.integer(m[, 5]),
+    foldseed = as.integer(m[, 6])
+  )
 }
 
-for (sub in list.dirs(intermediate_root, recursive = FALSE)) {
-  tag   <- basename(sub)
-  files <- list.files(sub, pattern = "\\.RData$", full.names = TRUE)
-  if (length(files) == 0L) next
-  seeds <- as.integer(str_match(basename(files), "seed(\\d+)")[, 2])
-  ord   <- order(seeds)
-  files <- files[ord]; seeds <- seeds[ord]
-  results <- lapply(files, load_rdata_to_list)
-  names(results) <- sprintf("seed%d", seeds)
-  assign(tag, results)
+read_subset <- function(meta_df) {
+  meta_df |>
+    mutate(data = map(path, read_parquet)) |>
+    select(-path) |>
+    unnest(data)
 }
 
-# Pulls the per-seed (or aggregated) cross-fitted R^2 for a given equation
-# (y_X or D1_X) and learner index out of the diag_obj entries.
-get_r2 <- function(fit_list, which = c("y_X", "D1_X"),
-                   agg = "median", learner = 1) {
-  which <- match.arg(which)
-  out <- unlist(lapply(fit_list, function(x) x$diag_obj[[1]][[which]]$r2[learner]))
-  if (identical(agg, "median")) return(median(out))
-  if (identical(agg, "mean"))   return(mean(out))
-  if (is.numeric(agg))          return(out[agg])
-  stop("Invalid 'agg' argument. Use 'median', 'mean', or a seed index.")
+load_ipeirotis <- function(data_path = DATA_PATH) {
+  read_delim(
+    file.path(data_path, "Monopsony_cleaned.csv"),
+    delim = ";", show_col_types = FALSE
+  )
 }
 
-# ---------------------------------------------------------------------------
-# Helpers: convert ddml_plm summaries (per-seed or aggregated via ddml_rep)
-# to modelsummary_list shims, so we can render with the same modelsummary +
-# coef_map / gof_map style as the other two posts.
-# ---------------------------------------------------------------------------
+# Fit DML residual-on-residual feols for a given (K, learner, foldseed).
+# Returns S3 "dml_fit" carrying the feols object plus OOF R^2 for Y and D.
+fit_dml_feols <- function(K, learner, foldseed,
+                          xfit_mode = "xclust",
+                          xfit_base = XFIT_BASE,
+                          data_path = DATA_PATH,
+                          ipeirotis = NULL) {
 
-# Learner positions in the diagnostics r2 vector (matches the 12-learner
-# order set in Code/dube_monopsony/run_cvc.R).
-LEARNER_IDX <- c(
-  "OLS" = 1L, "CV-Lasso" = 2L, "CV-Ridge" = 3L,
-  "RF 1" = 4L, "RF 2" = 5L, "RF 3" = 6L,
-  "XGB 1" = 7L, "XGB 2" = 8L, "XGB 3" = 9L,
-  "NN 1" = 10L, "NN 2" = 11L, "NN 3" = 12L,
-  "nnls1" = 13L, "singlebest" = 14L
+  xfit_dir <- file.path(xfit_base, sprintf("%s_K%d", xfit_mode, K))
+  if (!dir.exists(xfit_dir)) stop("Directory not found: ", xfit_dir)
+
+  meta <- parse_xfit_meta(xfit_dir) |>
+    filter(learner == !!learner, foldseed == !!foldseed)
+
+  pick <- function(outcome_name, hat_col) {
+    meta |>
+      filter(outcome == outcome_name) |>
+      read_subset() |>
+      rename(!!hat_col := hat)
+  }
+
+  dta_D <- pick("log_reward",   "hat_log_reward")
+  dta_Y <- pick("log_duration", "hat_log_duration")
+
+  dta <- left_join(dta_Y, dta_D,
+                   by = c("fold", "K", "learner", "foldseed", "row_id"))
+
+  if (is.null(ipeirotis)) ipeirotis <- load_ipeirotis(data_path)
+
+  dta <- dta |>
+    left_join(ipeirotis |> mutate(index = index + 1),
+              by = c("row_id" = "index")) |>
+    mutate(resid_Y = log_duration - hat_log_duration,
+           resid_D = log_reward   - hat_log_reward)
+
+  fit <- feols(resid_Y ~ resid_D, data = dta, cluster = ~requester_id)
+
+  r2_Y <- 1 - var(dta$resid_Y, na.rm = TRUE) / var(dta$log_duration, na.rm = TRUE)
+  r2_D <- 1 - var(dta$resid_D, na.rm = TRUE) / var(dta$log_reward,   na.rm = TRUE)
+
+  structure(
+    list(
+      fit       = fit,
+      r2_Y      = r2_Y,
+      r2_D      = r2_D,
+      nobs      = nobs(fit),
+      K         = K,
+      learner   = learner,
+      foldseed  = foldseed,
+      xfit_mode = xfit_mode
+    ),
+    class = "dml_fit"
+  )
+}
+
+# Median aggregation across S replications (Chernozhukov et al. 2018):
+#   theta_med = median_s { theta_s }
+#   se_med    = sqrt( median_s { se_s^2 + (theta_s - theta_med)^2 } )
+# R^2 reported as the mean across replications.
+median_aggregate_dml <- function(fits, coef_name = "resid_D") {
+  stopifnot(length(fits) > 0,
+            all(vapply(fits, inherits, logical(1), "dml_fit")))
+
+  ests <- vapply(fits, function(f) coef(f$fit)[coef_name],             numeric(1))
+  ses  <- vapply(fits, function(f) sqrt(diag(vcov(f$fit)))[coef_name], numeric(1))
+  r2Y  <- vapply(fits, `[[`, numeric(1), "r2_Y")
+  r2D  <- vapply(fits, `[[`, numeric(1), "r2_D")
+  ns   <- vapply(fits, `[[`, numeric(1), "nobs")
+
+  theta_med <- stats::median(ests)
+  se_med    <- sqrt(stats::median(ses^2 + (ests - theta_med)^2))
+
+  structure(
+    list(
+      estimate  = unname(theta_med),
+      std.error = unname(se_med),
+      S         = length(fits),
+      r2_Y      = mean(r2Y),
+      r2_D      = mean(r2D),
+      nobs      = stats::median(ns),
+      individual = tibble(
+        s         = seq_along(fits),
+        foldseed  = vapply(fits, `[[`, integer(1), "foldseed"),
+        estimate  = unname(ests),
+        std.error = unname(ses),
+        r2_Y      = r2Y,
+        r2_D      = r2D
+      )
+    ),
+    class = "dml_median"
+  )
+}
+
+# Fit DML across all seeds for given (K, learner) and return the per-seed fits.
+fit_dml_all_seeds <- function(K, learner, xfit_mode = "xclust",
+                              xfit_base = XFIT_BASE, data_path = DATA_PATH) {
+
+  ipeirotis <- load_ipeirotis(data_path)
+  xfit_dir  <- file.path(xfit_base, sprintf("%s_K%d", xfit_mode, K))
+  seeds <- parse_xfit_meta(xfit_dir) |>
+    filter(learner == !!learner) |>
+    distinct(foldseed) |> pull(foldseed) |> sort()
+
+  fits <- map(seeds, ~ fit_dml_feols(
+    K = K, learner = learner, foldseed = .x,
+    xfit_mode = xfit_mode, xfit_base = xfit_base,
+    ipeirotis = ipeirotis
+  ))
+  names(fits) <- sprintf("seed=%d", seeds)
+  fits
+}
+
+# broom / modelsummary integration ------------------------------------------
+tidy.dml_fit <- function(x, ...) {
+  est <- coef(x$fit)["resid_D"]
+  se  <- sqrt(diag(vcov(x$fit)))["resid_D"]
+  tibble(
+    term      = "theta",
+    estimate  = unname(est),
+    std.error = unname(se),
+    statistic = unname(est / se),
+    p.value   = 2 * stats::pnorm(-abs(unname(est / se)))
+  )
+}
+glance.dml_fit <- function(x, ...) {
+  tibble(
+    nobs       = x$nobs,
+    r2.outcome = x$r2_Y,
+    r2.treat   = x$r2_D,
+    K          = x$K,
+    learner    = x$learner,
+    foldseed   = x$foldseed
+  )
+}
+tidy.dml_median <- function(x, ...) {
+  tibble(
+    term      = "theta",
+    estimate  = x$estimate,
+    std.error = x$std.error,
+    statistic = x$estimate / x$std.error,
+    p.value   = 2 * stats::pnorm(-abs(x$estimate / x$std.error))
+  )
+}
+glance.dml_median <- function(x, ...) {
+  tibble(
+    nobs       = x$nobs,
+    S          = x$S,
+    r2.outcome = x$r2_Y,
+    r2.treat   = x$r2_D
+  )
+}
+registerS3method("tidy",   "dml_fit",    tidy.dml_fit)
+registerS3method("glance", "dml_fit",    glance.dml_fit)
+registerS3method("tidy",   "dml_median", tidy.dml_median)
+registerS3method("glance", "dml_median", glance.dml_median)
+
+DML_GOF_MAP <- tribble(
+  ~raw,         ~clean,             ~fmt,
+  "nobs",       "N",                "%.0f",
+  "S",          "S (replications)", "%.0f",
+  "r2.outcome", "R^2 outcome eq.",  "%.3f",
+  "r2.treat",   "R^2 treatment eq.","%.3f",
+  "K",          "K",                "%.0f",
+  "learner",    "Learner",          "%.0f",
+  "foldseed",   "Fold seed",        "%.0f"
 )
 
-# Build a modelsummary_list from a single ddml_plm fit (one seed) +
-# its diagnostics object, picking a specific learner column.
-ms_from_fit <- function(fit, diag_obj, learner = "XGB 3") {
-  cm <- summary(fit)$coefficients[, , learner]
-  est <- cm["D1", "Estimate"]
-  se  <- cm["D1", "Std. Error"]
-  zv  <- cm["D1", "z value"]
-  pv  <- cm["D1", "Pr(>|z|)"]
-  lidx <- LEARNER_IDX[[learner]]
-  r2y <- diag_obj[[1]]$y_X$r2[lidx]
-  r2d <- diag_obj[[1]]$D1_X$r2[lidx]
-  out <- list(
-    tidy = data.frame(
-      term      = "log_reward",
-      estimate  = unname(est),
-      std.error = unname(se),
-      statistic = unname(zv),
-      p.value   = unname(pv)
-    ),
-    glance = data.frame(
-      nobs = nobs(fit),
-      r2_y = unname(r2y),
-      r2_d = unname(r2d)
-    )
+export_dml_table <- function(fits, output = NULL, ...) {
+  args <- list(
+    fits,
+    gof_map  = DML_GOF_MAP,
+    coef_map = c("theta" = "theta (resid_Y ~ resid_D)"),
+    ...
   )
-  class(out) <- "modelsummary_list"
-  out
+  if (!is.null(output)) args$output <- output
+  do.call(modelsummary, args)
 }
-
-# Build a modelsummary_list from a seed list (e.g. xclust_K3) using
-# ddml_rep median aggregation, plus the median-across-seeds R^2 from
-# get_r2().
-ms_from_rep <- function(seed_list, learner = "XGB 3") {
-  fits   <- lapply(seed_list, function(x) x$fit)
-  rep_o  <- ddml_rep(fits)
-  cm     <- summary(rep_o)$coefficients[, , learner]
-  est <- cm["D1", "Estimate"]; se <- cm["D1", "Std. Error"]
-  zv  <- cm["D1", "z value"];  pv <- cm["D1", "Pr(>|z|)"]
-  lidx <- LEARNER_IDX[[learner]]
-  r2y <- get_r2(seed_list, which = "y_X",  agg = "median", learner = lidx)
-  r2d <- get_r2(seed_list, which = "D1_X", agg = "median", learner = lidx)
-  out <- list(
-    tidy = data.frame(
-      term      = "log_reward",
-      estimate  = unname(est),
-      std.error = unname(se),
-      statistic = unname(zv),
-      p.value   = unname(pv)
-    ),
-    glance = data.frame(
-      nobs = nobs(fits[[1]]),
-      r2_y = unname(r2y),
-      r2_d = unname(r2d)
-    )
-  )
-  class(out) <- "modelsummary_list"
-  out
-}
-
-# Per-seed shim that pulls the seed-specific R^2 (agg = seed index) so the
-# headline table reports honest per-seed predictive performance.
-ms_from_seed <- function(seed_list, seed_idx, learner = "XGB 3") {
-  entry <- seed_list[[seed_idx]]
-  cm <- summary(entry$fit)$coefficients[, , learner]
-  est <- cm["D1", "Estimate"]; se <- cm["D1", "Std. Error"]
-  zv  <- cm["D1", "z value"];  pv <- cm["D1", "Pr(>|z|)"]
-  lidx <- LEARNER_IDX[[learner]]
-  r2y <- get_r2(seed_list, which = "y_X",  agg = seed_idx, learner = lidx)
-  r2d <- get_r2(seed_list, which = "D1_X", agg = seed_idx, learner = lidx)
-  out <- list(
-    tidy = data.frame(
-      term      = "log_reward",
-      estimate  = unname(est),
-      std.error = unname(se),
-      statistic = unname(zv),
-      p.value   = unname(pv)
-    ),
-    glance = data.frame(
-      nobs = nobs(entry$fit),
-      r2_y = unname(r2y),
-      r2_d = unname(r2d)
-    )
-  )
-  class(out) <- "modelsummary_list"
-  out
-}
-
-gof_rows <- list(
-  list(raw = "nobs", clean = "n",        fmt = 0),
-  list(raw = "r2_y", clean = "R²(Y|X)",  fmt = 3),
-  list(raw = "r2_d", clean = "R²(D|X)",  fmt = 3)
-)
 ```
 
 # Monopsony III — how robust is the headline elasticity?
 
-*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. Both used $K = 3$, fold splitting by recruiter, a single XGBoost nuisance learner, one seed, and cluster-robust standard errors at the recruiter level. This post validates the results against other specification choices.*
+*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. This final post refines and validates the DDML specification.*
 
-This final part highlights validation checks worth running when applying DDML. We start by repeating the baseline cross-fitting under $S = 5$ different randomisation seeds and aggregating them with the paper's median-of-medians estimator. We then compare the resulting baseline median *pairwise* against three alternative variants — a different nuisance learner, IID instead of recruiter-honest fold construction, and a larger number of folds.
+In Part 2, we considered a particular DDML specification with $K=3$ cross-fitting folds, randomly split by recruiter, and XGBoost (using 800 trees, a minimum node size of 500, early stopping) as the nuisance learner. This final part illustrates how to refine the DDML specification and highlights sensible validation checks.
 
-## Multi-seed aggregation
+## Multi-seed median aggregation (XGBoost)
 
-A single randomization seed generates one random partition of the sample into folds. The randomization seed also affects machine learning algorithms relying on randomization, such as random forests. Asymptotically the exact random partition does not matter; in finite samples it can make a difference. To avoid unnecessary reliance on randomizatin, we recommend repeating the cross-fitting $S$ times and reporting the median-aggregate estimate.
+A single randomization seed generates one random partition of the sample into folds. Asymptotically the exact partition does not matter; in finite samples, however, it can make a noticeable difference.
 
-Below, we use the specification discussed in part Part 2: $K = 3$ recruiter-honest folds, XGBoost (the third XGB configuration, `XGB 3`) as the reported nuisance learner, and cluster-robust standard errors at the recruiter level. We then re-run this specification $S = 5$ times:
+The table below repeats the random fold splitting and DDML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples. 
+
+```{r tbl-multiseed-xgb}
+#| echo: false
+#| results: asis
+#| tbl-cap: "Per-seed estimates and median-aggregated estimates for the baseline specification."
+xgb_seeds <- fit_dml_all_seeds(K = 3, learner = 9, xfit_mode = "xclust")
+xgb_med   <- median_aggregate_dml(xgb_seeds)
+export_dml_table(
+  c(xgb_seeds, list("median agg. (S=5)" = xgb_med)),
+  output    = "html",
+  fmt       = 3,
+  statistic = "std.error"
+)
+```
+
+To avoid unnecessary reliance on a single draw, **we recommend repeating the cross-fitting multiple times and reporting the median- (or mean-) aggregated estimate**. The median-aggregate estimate can be calculated as:
 
 $$
 \hat\theta_0^{\text{median}} = \mathrm{median}\bigl\{\hat\theta_{0,s}\bigr\}_{s=1}^{S},\qquad
 \widehat{\mathrm{s.e.}}^{\text{median}} \;=\; \sqrt{\mathrm{median}\bigl\{\widehat{\mathrm{s.e.}}_s^{\,2} + (\hat\theta_{0,s} - \hat\theta_0^{\text{median}})^2\bigr\}_{s=1}^{S}}.
 $$
 
-```{r tbl-multiseed}
+The rationale for reporting an aggregated estimate (shown above in the last column) is that it provides an intuitive summary of DDML estimates that is less susceptible to particular random draws.
+
+### Fold-clustering by recruiter or by observation
+
+In the Ipeirotis data, some recruiters have many postings. The same recruiter's postings may share unobserved features that correlate with both posted reward and duration until acceptance.
+
+The table below investigates the impact of random fold construction by recruiter versus by observation on the DDML estimate and its standard error:
+
+```{r tbl-S2-folds}
 #| echo: false
 #| results: asis
-#| tbl-cap: "Per-seed estimates and median-of-medians aggregation for the baseline specification. XGB 3 nuisance learner; K = 3 recruiter-honest folds; cluster-robust SE per seed. R² rows are seed-specific for the per-seed columns and median-across-seeds for the aggregate column."
-seed_names <- names(xclust_K3)
-per_seed <- setNames(
-  lapply(seq_along(xclust_K3),
-         function(i) ms_from_seed(xclust_K3, i, learner = "XGB 3")),
-  seed_names
-)
-tbl1 <- c(per_seed,
-          list("median-of-medians (S=5)" = ms_from_rep(xclust_K3, "XGB 3")))
-modelsummary(
-  tbl1,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
+#| tbl-cap: "Table S.2 replica. Recruiter-honest folds with cluster-robust SE vs. IID folds. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner."
+iid_seeds <- fit_dml_all_seeds(K = 3, learner = 9, xfit_mode = "iid")
+iid_med   <- median_aggregate_dml(iid_seeds)
+export_dml_table(
+  list(
+    "xclust (baseline)" = xgb_med,
+    "IID folds"         = iid_med
+  ),
+  output    = "html",
   fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
+  statistic = "std.error"
 )
 ```
 
-The single-seed estimates span a non-trivial range relative to any individual seed's SE, so sample-split randomness has a noticeable impact in finite samples. We can be more confident in the median-of-medians estimate, which is less sensitive to outlier seeds.
+We find that the cross-fitted $R^2$ values drop noticeably when moving from IID to recruiter folds. The likely reason is that splitting at the observation level lets postings from the same recruiter appear in different folds, making out-of-sample predictions look more precise than they are. This in turn might bias the DDML estimates. To avoid this, **we recommend forming folds that acknowledge the dependence structure of the data**.
 
-### Choice of nuisance learner
-
-The choice of nuisance function estimator is consequential for DDML estimation. Poorly chosen or poorly tuned leaners may result in misleading DDML point estimates. Below we compare our reference specification relying on `XGB 3` against CV-Lasso:
-
-```{r tbl-learner}
-#| echo: false
-#| results: asis
-#| tbl-cap: "Baseline (XGB 3) vs. CV-Lasso, both aggregated over S = 5 seeds. K = 3 recruiter-honest folds; cluster-robust SE."
-tbl2 <- list(
-  "XGB 3" = ms_from_rep(xclust_K3, learner = "XGB 3"),
-  "CV-Lasso"         = ms_from_rep(xclust_K3, learner = "CV-Lasso"),
-  "Stacking NNLS"    = ms_from_rep(xclust_K3, learner = "nnls1")
-)
-modelsummary(
-  tbl2,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
-  fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
-)
-```
-
-The CV-Lasso underperforms badly on both $R^2(Y\mid X)$ and $R^2(D\mid X)$. The resulting estimate is indistinguishable from zero. 
-
-In Section 6 , we discuss several options to constructing and validating nuisance function estimators. One straightforward approach is short-stacking, a combination of DDML and model averaging that leverages the cross-fitting where to choosing and validating nuisance function estimators is model averaging: rather than regress $Y$ and $D$ on the cross-fitted predicted values of every candidate learner under non-negative weights summing to one. Table 6 of the paper reports stacked DDML at $\hat\theta_0 = -0.054$ (s.e. $0.020$); the stacking weights load almost entirely on the three XGBoost specifications, so when XGBoost dominates the linear alternatives — as it does here — stacking inherits its performance for free.
-
-```{r tbl-learner}
-#| echo: false
-#| results: asis
-#| tbl-cap: "Baseline (XGB 3) vs. CV-Lasso, both aggregated over S = 5 seeds. K = 3 recruiter-honest folds; cluster-robust SE."
-tbl2 <- list(
-  "XGB 3" = ms_from_rep(xclust_K3, learner = "XGB 3"), 
-  "Stacking NNLS"    = ms_from_rep(xclust_K3, learner = "nnls1")
-)
-modelsummary(
-  tbl2,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
-  fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
-)
-```
-
-### 2.2 Cluster-respecting vs IID folds
-
-```{r tbl-folds}
-#| echo: false
-#| results: asis
-#| tbl-cap: "Baseline (recruiter-honest folds, cluster-robust SE) vs. IID folds with het-robust SE. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner."
-tbl3 <- list(
-  "xclust (baseline)" = ms_from_rep(xclust_K3, learner = "XGB 3"),
-  "IID folds"         = ms_from_rep(iid_K3,    learner = "XGB 3"),
-  "xclust (baseline)" = ms_from_rep(xclust_K3, learner = "XGB 3"),
-  "IID folds"         = ms_from_rep(iid_K3,    learner = "XGB 3")
-)
-modelsummary(
-  tbl3,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
-  fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
-)
-```
-
-This is the sweep where leaving the default behind is the point. The Ipeirotis cross-section has many postings per recruiter, and the same recruiter's HITs share unobserved features (recruiter style, payout norms, qualification preferences) that correlate with both posted reward and fill time. Splitting at the observation level lets siblings from the same recruiter sit on both sides of the fold boundary — making the residuals look more independent than they are, and the cross-fitted $R^2$ look better than the true generalisation $R^2$. In `ddml_plm` the lever is whether `cluster_variable` is supplied; passing the recruiter id forms recruiter-honest folds and clusters SEs at the same level; omitting it gives random IID folds and uses heteroskedasticity-robust SEs:
+The R package `ddml` allows for automatic fold splitting by cluster using the `cluster_variable` option. The option also ensures standard errors are clustered at the same level:
 
 ```r
 fit <- ddml_plm(
@@ -301,37 +337,71 @@ fit <- ddml_plm(
 )
 ```
 
-The cross-fitted $R^2$ values typically *fall* when fold construction moves from IID to recruiter-honest, because the held-out fold now contains recruiters the nuisance learner never saw — that is the honest predictive performance and it is what should enter the DDML score. The standard error typically *rises*, because clustering at the recruiter level accounts for the correlated residuals that het-robust ignores. The cluster-honest combination is the inference-bearing one for this application, which is why Entries 1–2 and the baseline of this post use it as their default.
+### Number of folds $K$
 
-### 2.3 Number of folds $K$
+Cross-fitting theory accommodates any fixed number of cross-fitting folds $K$, but in practice results may vary depending on the choice of $K$, especially when the sample size is small. In the paper, **we recommend the largest $K$ consistent with available computing resources, plus a sensitivity check**. 
 
-```{r tbl-K}
+The table below compares the baseline $K = 3$ specification against $K = 5$, both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
+
+```{r tbl-S3-K}
 #| echo: false
 #| results: asis
-#| tbl-cap: "Baseline K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE."
-tbl4 <- list(
-  "K = 3 (baseline)" = ms_from_rep(xclust_K3, learner = "XGB 3"),
-  "K = 5"            = ms_from_rep(xclust_K5, learner = "XGB 3")
-)
-modelsummary(
-  tbl4,
-  coef_map  = c("log_reward" = "log(reward)"),
-  gof_map   = gof_rows,
+#| tbl-cap: "Table S.3 replica. K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE."
+xgb_K5_seeds <- fit_dml_all_seeds(K = 5, learner = 9, xfit_mode = "xclust")
+xgb_K5_med   <- median_aggregate_dml(xgb_K5_seeds)
+export_dml_table(
+  list(
+    "K = 3 (baseline)" = xgb_med,
+    "K = 5"            = xgb_K5_med
+  ),
+  output    = "html",
   fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
+  statistic = "std.error"
 )
 ```
 
-Cross-fitting theory accommodates any fixed $K$. Velez (2024) shows performance improves with more folds, peaking at $K = n$ with diminishing returns. In the paper we recommend the largest $K$ consistent with available compute, plus a sensitivity check. Moving from $K = 3$ to $K = 5$ trains each nuisance fit on $4/5$ of the data instead of $2/3$ and compute scales roughly linearly. With $n \approx 258{,}000$ either value is in the range where the bias–variance tradeoff is favourable.
+We find the results to be fairly robust to the choice of $K$, with the $K=5$ specification yielding a slightly smaller point estimate in magnitude. 
 
-## 3. What to take away
+## The choice of learner: XGBoost vs CV-Lasso
 
-- A single ML learner is not a complete DDML specification. The point estimate is informative only when the nuisance learner can actually predict — cross-fitted $R^2$ is the diagnostic to lean on.
-- Short-stacking (or, more conservatively, reporting both stacking and single-best) sidesteps the learner-selection problem and is cheap relative to refitting four nuisance models from scratch.
-- Median-of-medians over $S \ge 3$ seeds is the inference-bearing point estimate; one-seed numbers are fine for iteration but should not be the published number.
-- Cluster vs IID fold construction is the design decision with the largest swing in SE and the most consequential one for inference. The blog defaults to recruiter-honest folds + cluster-robust SEs; the IID variant is included only as a contrast.
-- $K$ matters less than the other knobs in this application.
+So far, we have exclusively relied on a particular XGBoost learner for illustration. 
+
+The choice of nuisance function estimator is consequential for DDML estimation. Poorly chosen or poorly tuned learners can yield misleading DDML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
+
+```{r tbl-xgb-vs-lasso}
+#| echo: false
+#| results: asis
+#| tbl-cap: "XGB 3 vs. CV-Lasso, both median-aggregated over S = 5 seeds. K = 3 recruiter-honest folds; cluster-robust SE."
+lasso_seeds <- fit_dml_all_seeds(K = 3, learner = 2, xfit_mode = "xclust")
+lasso_med   <- median_aggregate_dml(lasso_seeds)
+export_dml_table(
+  list(
+    "XGB 3 (median agg.)"    = xgb_med,
+    "CV-Lasso (median agg.)" = lasso_med
+  ),
+  output    = "html",
+  fmt       = 3,
+  statistic = "std.error"
+)
+```
+
+CV-Lasso underperforms badly on both $R^2(Y\mid X)$ and $R^2(D\mid X)$, and the resulting estimate is indistinguishable from zero. A priori one would not know whether the relevant DGP favors boosted trees or a sparse linear model, so committing to a single learner without validation is fragile. 
+
+## How to select and validate the nuisance learner?
+
+In Section 6 of the paper, we discuss **three recommended options for constructing and validating nuisance function estimators**:
+
+1. Consider performance metrics based on cross-fitted predicted values (e.g., cross-fitted $R^2$), which allow selecting the best-performing learner for each nuisance function separately.
+2. Use formal inference-based learner selection, e.g., the Cross-Validation with Confidence test of Lei (2020).
+3. Use model averaging (stacking) to optimally combine candidate learners using non-negative least squares.
+
+We focus here on the third approach. For both the outcome and the treatment equation, we form a combination of learners by regressing $Y$ and $D$ on the cross-fitted predicted values of every candidate learner, subject to non-negative weights that sum to one. We refer to this approach as "short-stacking" to distinguish it from an alternative approach that re-estimates the stacking weights for each fold. 
+
+Table 6 from the paper reports the stacked DDML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
+
+## What to take away
+
+Before reporting DDML results, it is essential to validate the nuisance function estimators and to question their performance. Other important implementation choices include the number of cross-fitting folds, the fold splitting scheme, and the aggregation method.
 
 ## References
 
@@ -340,4 +410,3 @@ Cross-fitting theory accommodates any fixed $K$. Velez (2024) shows performance 
 - Chernozhukov, V., D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey and J. Robins (2018). [Double/Debiased machine learning for treatment and structural parameters.](https://doi.org/10.1111/ectj.12097)
 - Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).
 - Lei, J. (2020). Cross-validation with confidence. *Journal of the American Statistical Association.*
-- Velez, A. (2024). On the asymptotic properties of debiased machine learning estimators.
