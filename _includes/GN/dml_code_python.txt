@@ -1,0 +1,80 @@
+# DoubleML does not natively implement short-stacking, so we hand-roll
+# the cross-fitting with sklearn and combine the per-learner OOF
+# predictions via non-negative least squares constrained to sum to one
+# (the "nnls1" stacking used by ddml / pystacked).
+
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+
+from sklearn.linear_model import LinearRegression, LassoCV
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import KFold
+from scipy.optimize import minimize
+
+
+def stack_nnls1(A, b):
+    """Solve min ||A w - b||^2 subject to w >= 0 and sum(w) = 1."""
+    k = A.shape[1]
+    res = minimize(lambda w: np.sum((A @ w - b) ** 2),
+                   x0=np.full(k, 1.0 / k),
+                   method="SLSQP",
+                   bounds=[(0.0, 1.0)] * k,
+                   constraints=[{"type": "eq", "fun": lambda w: w.sum() - 1.0}],
+                   options={"ftol": 1e-12})
+    return res.x
+
+
+# In the GN estimations, GDP is missing for one country.
+# For simplicity, we drop this one country so that it is never used.
+gn = gn.dropna(subset=["loggdp"]).copy().reset_index(drop=True)
+
+# To make the code more readable, define variables for Y, D and X:
+Y_var  = "A198new"
+D_var  = "sd_EE"
+X_vars = ["v104_ee", "settlement_ee", "polhierarchies_ee", "loggdp"]
+
+Y = gn[Y_var].astype(float).to_numpy()
+D = gn[D_var].astype(float).to_numpy()
+X = gn[X_vars].astype(float).to_numpy()
+
+# Set seed for replicability.
+np.random.seed(12345)
+
+# Step 1: Define the three candidate learners — OLS, CV-Lasso, RandomForest.
+learners = {
+    "OLS":   lambda: LinearRegression(),
+    "Lasso": lambda: LassoCV(cv=5, random_state=12345, max_iter=10000),
+    "RF":    lambda: RandomForestRegressor(random_state=12345),
+}
+
+# Step 2: 10-fold OOF predictions, same fold split for every learner.
+kf = KFold(n_splits=10, shuffle=True, random_state=12345)
+
+
+def cv_predict(make_estimator, target):
+    preds = np.empty_like(target, dtype=float)
+    for tr, te in kf.split(X):
+        est = make_estimator()
+        est.fit(X[tr], target[tr])
+        preds[te] = est.predict(X[te])
+    return preds
+
+
+Yhat = {name: cv_predict(make, Y) for name, make in learners.items()}
+Dhat = {name: cv_predict(make, D) for name, make in learners.items()}
+
+# Step 3: Short-stack via sum-to-one constrained NNLS on the OOF predictions.
+Yhat_mat = np.column_stack([Yhat["OLS"], Yhat["Lasso"], Yhat["RF"]])
+Dhat_mat = np.column_stack([Dhat["OLS"], Dhat["Lasso"], Dhat["RF"]])
+w_Y = stack_nnls1(Yhat_mat, Y)
+w_D = stack_nnls1(Dhat_mat, D)
+Yhat_ss = Yhat_mat @ w_Y
+Dhat_ss = Dhat_mat @ w_D
+
+# Step 4: Estimate theta from the residualised OLS, HC1 robust SE.
+resY = Y - Yhat_ss
+resD = D - Dhat_ss
+fit  = sm.OLS(resY, sm.add_constant(resD)).fit().get_robustcov_results(cov_type="HC1")
+
+print(f"theta = {fit.params[1]:.4f}  (SE {fit.bse[1]:.4f})")

@@ -1,0 +1,5 @@
+# w_Y, w_D are the NNLS weights from the hand-rolled short-stack above.
+print("Short-stack NNLS weights (Y eq):  "
+      f"OLS={w_Y[0]:.3f}, Lasso={w_Y[1]:.3f}, RF={w_Y[2]:.3f}")
+print("Short-stack NNLS weights (D eq):  "
+      f"OLS={w_D[0]:.3f}, Lasso={w_D[1]:.3f}, RF={w_D[2]:.3f}")

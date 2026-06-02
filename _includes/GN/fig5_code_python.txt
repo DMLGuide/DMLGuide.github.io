@@ -1,0 +1,27 @@
+# Figure 5 visualises the bivariate (no-controls) relationship — column (3).
+X_bi = sm.add_constant(gn[["sd_EE"]], has_constant="add")
+model_bivariate = sm.OLS(gn["A198new"].astype(float), X_bi).fit()
+gn["hat"] = model_bivariate.predict(X_bi)
+
+fig, ax = plt.subplots(figsize=(7, 5))
+ax.scatter(gn["sd_EE"], gn["A198new"], s=30)
+
+for _, row in gn.iterrows():
+    ax.text(row["sd_EE"], row["A198new"], str(row["isocode"]),
+            fontsize=8, va="bottom", ha="center")
+
+tmp = gn.sort_values("sd_EE")
+ax.plot(tmp["sd_EE"], tmp["hat"], linewidth=2)
+
+ax.set_xlim(0, 0.5)
+ax.set_xticks([0, 0.25, 0.5])
+ax.set_ylim(2.8, 6.0)
+ax.set_yticks([3, 4, 5, 6])
+ax.set_xlabel("Climatic instability")
+ax.set_ylabel("Importance of tradition")
+ax.grid(False)
+ax.text(0, 2.85, "(coef = -1.92, t = -3.68)", fontsize=10, ha="left", va="bottom")
+
+plt.tight_layout()
+plt.show()
+gn = gn.drop(columns=["hat"])

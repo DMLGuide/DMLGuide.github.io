@@ -15,3 +15,6 @@ kramdown:
 color_scheme: custom
 
 favicon_ico: "/assets/images/favicon.svg"
+
+exclude:
+  - examples/AngristEvans.html

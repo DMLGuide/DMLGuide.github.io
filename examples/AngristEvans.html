@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Imposing no-interaction restrictions in DML estimations.">
+
+<title>DDML for the Angrist &amp; Evans</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="AngristEvans_files/libs/clipboard/clipboard.min.js"></script>
+<script src="AngristEvans_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="AngristEvans_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="AngristEvans_files/libs/quarto-html/popper.min.js"></script>
+<script src="AngristEvans_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="AngristEvans_files/libs/quarto-html/anchor.min.js"></script>
+<link href="AngristEvans_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="AngristEvans_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="AngristEvans_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="AngristEvans_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="AngristEvans_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  </head><body class="fullcontent quarto-light">true
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+
+
+
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">DDML for the Angrist &amp; Evans</h1>
+</div>
+
+<div>
+  <div class="description">
+    Imposing no-interaction restrictions in DML estimations.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="machine-labor-ddml-for-the-angrist-evans-iv" class="level1">
+<h1>Machine Labor — DDML for the Angrist &amp; Evans IV</h1>
+<p>The classical study of <a href="https://doi.org/10.1257/aer.88.3.450">Angrist &amp; Evans (1998)</a> estimates the effect of a third child on maternal labor supply using the instrument <code>samesex</code>, an indicator for the first two children sharing a sex. The rationale for using <code>samesex</code> is that same-sex parents are modestly more likely to have a third child, but — conditional on the sex of the first child and the sex of the second child — <code>samesex</code> is plausibly unrelated to the mother’s labor market outcomes.</p>
+<p><a href="https://doi.org/10.1086/717933">Angrist &amp; Frandsen (2022)</a> revisit this same application in their article <em>Machine Labor</em> and ask whether ML can be used to estimate the first stage of two-stage least squares.</p>
+<p>They show that it can go badly: the random forests they consider discover the <code>boy1st * boy2nd</code> interaction inside the first-stage function <span class="math inline">\(E[Z \mid X]\)</span>. As a consequence, the residualized instrument collapses to noise, and the second-stage coefficient becomes uninformative. They conclude that ML is “ill-suited” for instrumental variables in this application.</p>
+<p>The identification assumption that makes 2SLS work is that <code>boy1st</code> and <code>boy2nd</code> enter additively, not interactively, in the first stage. This assumption is implied by the linear regression model and enforced by least squares.</p>
+<p>We show below that we can encode the additivity assumption into ML algorithms directly. With that restriction imposed, DDML and 2SLS yield similar estimates, and DDML also passes a placebo test.</p>
+<section id="setup-and-variables" class="level2">
+<h2 class="anchored" data-anchor-id="setup-and-variables">1. Setup and variables</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>workedm</code></td>
+<td>Outcome: mother worked last year</td>
+</tr>
+<tr class="even">
+<td><code>morekids</code> (<span class="math inline">\(D\)</span>)</td>
+<td>Indicator: mother has more than two children</td>
+</tr>
+<tr class="odd">
+<td><code>samesex</code> (<span class="math inline">\(Z\)</span>)</td>
+<td>Instrument: first two children of the same sex</td>
+</tr>
+<tr class="even">
+<td><code>boy1st</code>, <code>boy2nd</code></td>
+<td>Sex of first / second child (controls)</td>
+</tr>
+<tr class="odd">
+<td><code>agem1</code>, <code>agefstm</code></td>
+<td>Mother’s age / age at first birth</td>
+</tr>
+<tr class="even">
+<td><code>blackm</code>, <code>hispm</code>, <code>othracem</code></td>
+<td>Race indicators</td>
+</tr>
+<tr class="odd">
+<td><code>educm</code></td>
+<td>Years of education</td>
+</tr>
+</tbody>
+</table>
+<p>In the script, we define three named groups of regressors:</p>
+<details open="">
+<summary>
+R code — variable groups
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>X_vars     <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"boy1st"</span>, <span class="st">"boy2nd"</span>, <span class="st">"agem1"</span>, <span class="st">"agefstm"</span>,</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>                <span class="st">"blackm"</span>, <span class="st">"hispm"</span>, <span class="st">"othracem"</span>, <span class="st">"educm"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>Xbase_boy1 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"boy1st"</span>,          <span class="st">"agem1"</span>, <span class="st">"agefstm"</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                <span class="st">"blackm"</span>, <span class="st">"hispm"</span>, <span class="st">"othracem"</span>, <span class="st">"educm"</span>)  <span class="co"># drops boy2nd</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>Xbase_boy2 <span class="ot">&lt;-</span> <span class="fu">c</span>(         <span class="st">"boy2nd"</span>, <span class="st">"agem1"</span>, <span class="st">"agefstm"</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                <span class="st">"blackm"</span>, <span class="st">"hispm"</span>, <span class="st">"othracem"</span>, <span class="st">"educm"</span>)  <span class="co"># drops boy1st</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>D_var  <span class="ot">&lt;-</span> <span class="st">"morekids"</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>Z_var  <span class="ot">&lt;-</span> <span class="st">"instr"</span> <span class="co"># either `same_sex` or a placebo instrument</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>kfolds <span class="ot">&lt;-</span> <span class="dv">2</span>L</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<p><code>Xbase_boy1</code> and <code>Xbase_boy2</code> are deliberately set up so that we can build a polynomial dictionary separately within each block, guaranteeing the resulting features never multiply a <code>boy1st</code>-term by a <code>boy2nd</code>-term.</p>
+</section>
+<section id="the-identification-issue-formally" class="level2">
+<h2 class="anchored" data-anchor-id="the-identification-issue-formally">2. The identification issue, formally</h2>
+<p>The partially linear IV (PLIV) model is</p>
+<p><span class="math display">\[Y = \theta\, D + g(X) + \varepsilon, \qquad
+D = m(X) + \alpha\, Z + u, \qquad
+Z = r(X) + v.\]</span></p>
+<p>The DDML score uses the residualized instrument <span class="math inline">\(\tilde Z = Z - \hat r(X)\)</span> to instrument the residualized treatment <span class="math inline">\(\tilde D = D - \hat m(X)\)</span> in a regression on <span class="math inline">\(\tilde Y = Y - \hat g(X)\)</span>. The whole construction collapses if <span class="math inline">\(\hat r(X) \approx Z\)</span>, because then <span class="math inline">\(\tilde Z \approx 0\)</span>.</p>
+<p>In Angrist &amp; Evans, by construction,</p>
+<p><span class="math display">\[\text{samesex} = \text{boy1st}\cdot\text{boy2nd} + (1-\text{boy1st})(1-\text{boy2nd}),\]</span></p>
+<p>which is <em>exactly</em> a function of the interaction <code>boy1st × boy2nd</code> and the levels. So if <span class="math inline">\(r(X)\)</span> is allowed to use that interaction, a flexible learner will recover <code>samesex</code> essentially perfectly from <span class="math inline">\(X\)</span> — making <span class="math inline">\(\tilde Z = 0\)</span> by construction.</p>
+<p>OLS doesn’t have this problem because, we don’t include the interaction <code>boy1st × boy2nd</code> as a control. The exclusion of <code>boy1st × boy2nd</code> is an implicit identifying restriction. Flexible machine learners like random forests, other tree-based gradient boosting or deep learning architectures will leverage interactions for prediction and thus destroy the instrument. The cure is to enforce the same restriction inside the machine learning algorithms.</p>
+</section>
+<section id="two-ways-to-encode-the-restriction" class="level2">
+<h2 class="anchored" data-anchor-id="two-ways-to-encode-the-restriction">3. Two ways to encode the restriction</h2>
+<section id="polynomial-dictionaries-built-block-by-block" class="level3">
+<h3 class="anchored" data-anchor-id="polynomial-dictionaries-built-block-by-block">Polynomial dictionaries built block-by-block</h3>
+<p>For lasso and ridge we build a cubic polynomial dictionary <em>separately</em> on <code>Xbase_boy1</code> and <code>Xbase_boy2</code>, then column-bind them. Because the two dictionaries never share both <code>boy1st</code> and <code>boy2nd</code>, no resulting term multiplies the two sex indicators together.</p>
+<details open="">
+<summary>
+R code — <code>build_poly3()</code> and the block-structured design matrix
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>build_poly3 <span class="ot">&lt;-</span> <span class="cf">function</span>(df, base_cols) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  X <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(df[, base_cols, <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  P <span class="ot">&lt;-</span> <span class="fu">poly</span>(X, <span class="at">degree =</span> <span class="dv">3</span>L, <span class="at">raw =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> P)[, <span class="sc">-</span><span class="dv">1</span>L, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  exps <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">strsplit</span>(<span class="fu">sub</span>(<span class="st">"^P"</span>, <span class="st">""</span>, <span class="fu">colnames</span>(out)), <span class="st">"."</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    as.integer))</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(out) <span class="ot">&lt;-</span> <span class="fu">apply</span>(exps, <span class="dv">1</span>L,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(e) <span class="fu">paste</span>(<span class="fu">rep</span>(base_cols, e), <span class="at">collapse =</span> <span class="st">"_x_"</span>))</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  out[, <span class="fu">order</span>(<span class="fu">rowSums</span>(exps)), drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>X_poly_b1 <span class="ot">&lt;-</span> <span class="fu">build_poly3</span>(data, Xbase_boy1)   <span class="co"># cubic poly without boy2nd</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>X_poly_b2 <span class="ot">&lt;-</span> <span class="fu">build_poly3</span>(data, Xbase_boy2)   <span class="co"># cubic poly without boy1st</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</section>
+<section id="xgboost-interaction-constraints" class="level3">
+<h3 class="anchored" data-anchor-id="xgboost-interaction-constraints">XGBoost interaction constraints</h3>
+<p>Tree-based methods allow imposing no-interaction constraints by enforcing that a single tree can split on <code>boy1st</code> <em>or</em> <code>boy2nd</code> but never both inside one path. Standard random forest implementations in R do, however, not implement such a constraint. We thus use XGBoost which lets us declare which features are allowed to appear together along any single tree path. We pass two groups, one containing <code>boy1st</code> (index 1) plus the demographics, and one containing <code>boy2nd</code> (index 2) plus the demographics.</p>
+<details open="">
+<summary>
+R code — <code>make_learner_specs(constraint = TRUE, ...)</code>
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># X_vars order: 1=boy1st, 2=boy2nd, 3=agem1, 4=agefstm,</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#               5=blackm, 6=hispm, 7=othracem, 8=educm</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>xgb_args1 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">nrounds =</span> <span class="dv">500</span>L, <span class="at">learning_rate =</span> <span class="fl">0.01</span>, <span class="at">nthread =</span> <span class="dv">1</span>L,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">interaction_constraints =</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span><span class="sc">:</span><span class="dv">8</span>), <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">8</span>)))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>xgb_args2 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">nrounds =</span> <span class="dv">500</span>L, <span class="at">learning_rate =</span> <span class="fl">0.03</span>, <span class="at">nthread =</span> <span class="dv">1</span>L,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">interaction_constraints =</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span><span class="sc">:</span><span class="dv">8</span>), <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">8</span>)))</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>specs_stack <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">what =</span> mdl_glmnet,  <span class="at">args =</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">cv =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                           <span class="at">assign_X =</span> poly_idx),</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">what =</span> mdl_glmnet,  <span class="at">args =</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="dv">0</span>, <span class="at">cv =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                           <span class="at">assign_X =</span> poly_idx),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">what =</span> mdl_xgboost, <span class="at">args =</span> xgb_args1, <span class="at">assign_X =</span> base_idx),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">what =</span> mdl_xgboost, <span class="at">args =</span> xgb_args2, <span class="at">assign_X =</span> base_idx)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<p>The <code>assign_X</code> field tells <code>ddml</code> which columns of <code>X_full</code> each learner sees: XGBoost works on the eight original variables; lasso and ridge work on the (additivity-respecting) polynomial dictionary.</p>
+</section>
+</section>
+<section id="ddml-estimation" class="level2">
+<h2 class="anchored" data-anchor-id="ddml-estimation">4. DDML estimation</h2>
+<p>We call <code>ddml::ddml_pliv()</code> with the four-learner stack, short-stacking via non-negative least squares, two folds, and heteroskedasticity-robust standard errors. After fitting, we also pull the per-learner cross-fitted residuals so we can read off a per-learner first-stage coefficient.</p>
+<details open="">
+<summary>
+R code — <code>ddml_pliv()</code> plus per-learner first-stage extraction
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fit_ddml <span class="ot">&lt;-</span> <span class="fu">ddml_pliv</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">y                       =</span> y,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">D                       =</span> D,            <span class="co"># morekids</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Z                       =</span> Z,            <span class="co"># instr (one of three flavors)</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">X                       =</span> X_full,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">learners                =</span> specs_stack,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">sample_folds            =</span> kfolds,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">ensemble_type           =</span> <span class="st">"nnls"</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">custom_ensemble_weights =</span> <span class="fu">diag</span>(<span class="fu">length</span>(specs_stack)),  <span class="co"># one "ensemble" per learner</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">shortstack              =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">silent                  =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-learner first-stage: regress residualized D on residualized Z.</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (l <span class="cf">in</span> <span class="fu">colnames</span>(fit_ddml<span class="sc">$</span>fitted<span class="sc">$</span>D1_X<span class="sc">$</span>cf_fitted)) {</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  D_resid <span class="ot">&lt;-</span> D[,<span class="dv">1</span>] <span class="sc">-</span> fit_ddml<span class="sc">$</span>fitted<span class="sc">$</span>D1_X<span class="sc">$</span>cf_fitted[, l]</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  Z_resid <span class="ot">&lt;-</span> Z[,<span class="dv">1</span>] <span class="sc">-</span> fit_ddml<span class="sc">$</span>fitted<span class="sc">$</span>Z1_X<span class="sc">$</span>cf_fitted[, l]</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">feols</span>(D_resid <span class="sc">~</span> Z_resid, <span class="at">se =</span> <span class="st">"hetero"</span>)   <span class="co"># learner-l first stage</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<p>Three things worth noting:</p>
+<ul>
+<li><code>custom_ensemble_weights = diag(4)</code> makes <code>ddml</code> return <em>both</em> the NNLS stack and the four single-learner “ensembles,” so a single fit yields all the per-learner numbers below.</li>
+<li>The PLIV score has the same Neyman-orthogonality structure as the partially linear model: small first-order errors in <span class="math inline">\(\hat r\)</span>, <span class="math inline">\(\hat m\)</span>, <span class="math inline">\(\hat g\)</span> wash out, <em>provided</em> <span class="math inline">\(\tilde Z\)</span> retains nontrivial variation. Section 3 is exactly about preserving that variation.</li>
+</ul>
+</section>
+<section id="two-instrument-flavors" class="level2">
+<h2 class="anchored" data-anchor-id="two-instrument-flavors">5. Two instrument flavors</h2>
+<p>To stress-test the pipeline we run it with two definitions of <code>Z</code>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Flavor</th>
+<th>Definition</th>
+<th>Expected behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>observed</code></td>
+<td><code>samesex</code> (the real Angrist–Evans IV)</td>
+<td>DDML should agree with 2SLS</td>
+</tr>
+<tr class="even">
+<td><code>fake</code></td>
+<td><code>agem1 + educm + Uniform(0,1)</code> — a pure function of the controls plus noise</td>
+<td>First stage and structural effect should both be ~0</td>
+</tr>
+</tbody>
+</table>
+<p><code>fake</code> is the cleanest placebo: any first-stage signal a learner finds there is spurious, because <code>Z</code> is by construction a function of two controls plus noise.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">load_data</span>(<span class="st">"pums80m.dta"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (flavor <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"observed"</span>, <span class="st">"fake"</span>)) {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (constraint <span class="cf">in</span> <span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)) {</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    res[[<span class="fu">paste</span>(flavor, <span class="st">"workedm"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>               <span class="fu">ifelse</span>(constraint, <span class="st">"constrained"</span>, <span class="st">"unconstrained"</span>), <span class="at">sep =</span> <span class="st">"_"</span>)]] <span class="ot">&lt;-</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">estimate</span>(df, <span class="at">yvar =</span> <span class="st">"workedm"</span>, <span class="at">instrument =</span> flavor, <span class="at">constraint =</span> constraint)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(res)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>arrow<span class="sc">::</span><span class="fu">write_parquet</span>(res, <span class="st">"results.parquet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="real-iv-samesex-ddml-reproduces-2sls" class="level3">
+<h3 class="anchored" data-anchor-id="real-iv-samesex-ddml-reproduces-2sls">5.1 Real IV (<code>samesex</code>) — DDML reproduces 2SLS</h3>
+<p>For the observed <code>samesex</code> instrument, all constrained DDML variants — stacking, lasso, ridge, XGBoost — land on essentially the 2SLS point estimate. Unconstrained XGBoost (last two rows of the table) drifts off.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Learner</th>
+<th style="text-align: left;">Structural / constrained</th>
+<th style="text-align: left;">Structural / unconstrained</th>
+<th style="text-align: left;">First stage / constrained</th>
+<th style="text-align: left;">First stage / unconstrained</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2SLS</td>
+<td style="text-align: left;">-0.118 (0.028)</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">0.069 (0.002)</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Stacking</td>
+<td style="text-align: left;">-0.119 (0.028)</td>
+<td style="text-align: left;">-0.467 (0.319)</td>
+<td style="text-align: left;">0.070 (0.002)</td>
+<td style="text-align: left;">946.342 (278.321)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lasso</td>
+<td style="text-align: left;">-0.119 (0.028)</td>
+<td style="text-align: left;">-0.412 (5.453)</td>
+<td style="text-align: left;">0.069 (0.002)</td>
+<td style="text-align: left;">0.012 (0.060)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ridge</td>
+<td style="text-align: left;">-0.120 (0.028)</td>
+<td style="text-align: left;">-0.456 (0.439)</td>
+<td style="text-align: left;">0.069 (0.002)</td>
+<td style="text-align: left;">0.058 (0.023)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">XGB(.01)</td>
+<td style="text-align: left;">-0.118 (0.027)</td>
+<td style="text-align: left;">-0.448 (0.173)</td>
+<td style="text-align: left;">0.070 (0.002)</td>
+<td style="text-align: left;">1.743 (0.279)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">XGB(.03)</td>
+<td style="text-align: left;">-0.115 (0.027)</td>
+<td style="text-align: left;">-0.649 (0.459)</td>
+<td style="text-align: left;">0.070 (0.002)</td>
+<td style="text-align: left;">368.518 (147.053)</td>
+</tr>
+</tbody>
+</table>
+<p>Outcome: workedm. Instrument: observed (samesex). Coefficient (SE) per learner; columns split Stage × Constraint. The 2SLS row does not depend on the constraint, so it is reported once per stage.</p>
+</section>
+<section id="pure-noise-iv-fake-ddml-refuses-to-find-signal" class="level3">
+<h3 class="anchored" data-anchor-id="pure-noise-iv-fake-ddml-refuses-to-find-signal">5.2 Pure-noise IV (<code>fake</code>) — DDML refuses to find signal</h3>
+<p>When <code>Z = agem1 + educm + noise</code>, the true first stage is zero. Constrained DDML correctly returns a first-stage and structural effect indistinguishable from zero. Unconstrained learners — XGBoost in particular — can manufacture a nonzero first stage by exploiting the way <code>agem1</code> and <code>educm</code> enter both <span class="math inline">\(r(X)\)</span> and the controls.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Learner</th>
+<th style="text-align: left;">Structural / constrained</th>
+<th style="text-align: left;">Structural / unconstrained</th>
+<th style="text-align: left;">First stage / constrained</th>
+<th style="text-align: left;">First stage / unconstrained</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2SLS</td>
+<td style="text-align: left;">-1.613 (1.278)</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Stacking</td>
+<td style="text-align: left;">-1.583 (1.314)</td>
+<td style="text-align: left;">-1.526 (1.180)</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+<td style="text-align: left;">-0.005 (0.003)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lasso</td>
+<td style="text-align: left;">-1.720 (1.423)</td>
+<td style="text-align: left;">-1.744 (1.444)</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ridge</td>
+<td style="text-align: left;">1.722 (1.363)</td>
+<td style="text-align: left;">2.056 (1.546)</td>
+<td style="text-align: left;">0.004 (0.002)</td>
+<td style="text-align: left;">0.003 (0.002)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">XGB(.01)</td>
+<td style="text-align: left;">-1.838 (1.527)</td>
+<td style="text-align: left;">-1.929 (1.629)</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">XGB(.03)</td>
+<td style="text-align: left;">-1.661 (1.504)</td>
+<td style="text-align: left;">-1.355 (1.035)</td>
+<td style="text-align: left;">-0.004 (0.003)</td>
+<td style="text-align: left;">-0.005 (0.003)</td>
+</tr>
+</tbody>
+</table>
+<p>Outcome: workedm. Instrument: fake (= agem1 + educm + uniform noise). The true effect is zero.</p>
+</section>
+</section>
+<section id="takeaway" class="level2">
+<h2 class="anchored" data-anchor-id="takeaway">6. Takeaway</h2>
+<p>Identification restrictions don’t disappear when you replace OLS with a learner — they just move. In the Angrist &amp; Evans first stage, the restriction is that <code>boy1st</code> and <code>boy2nd</code> enter additively, and it lives in our choice of regressors. Hand that choice off to a flexible ML learner and the restriction is gone; the learner will find the <code>boy1st × boy2nd</code> interaction, residualize the instrument away, and report an apparently-precise but uninformative second stage.</p>
+<p>Two primitives make this restriction explicit and learner-side:</p>
+<ul>
+<li><strong>Block-structured feature dictionaries.</strong> Build polynomial / interaction features within each block separately. Generalizes to “no interaction between A and B” for any partition.</li>
+<li><strong><code>xgboost</code> <code>interaction_constraints</code>.</strong> A list of allowed groups; any single tree path may only split on features that share a group. The same idea exists in some random-forest implementations under the name <em>additivity constraints</em> (see Hooker, 2007).</li>
+</ul>
+<p>With either tool in place, DDML is well-behaved on the real IV <em>and</em> on the pure-noise placebo. ML is fine for the IV first stage — provided you tell the learner what it isn’t allowed to learn.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Angrist, J. D., &amp; Evans, W. N. (1998). Children and their parents’ labor supply: Evidence from exogenous variation in family size. <em>American Economic Review</em>, 88(3), 450–477. <a href="https://doi.org/10.1257/aer.88.3.450" class="uri">https://doi.org/10.1257/aer.88.3.450</a></li>
+<li>Angrist, J. D., &amp; Frandsen, B. (2022). Machine labor. <em>Journal of Labor Economics</em>, 40(S1), S97–S140. <a href="https://doi.org/10.1086/717933" class="uri">https://doi.org/10.1086/717933</a></li>
+<li>Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W., &amp; Robins, J. (2018). Double/debiased machine learning for treatment and structural parameters. <em>Econometrics Journal</em>, 21(1), C1–C68. <a href="https://doi.org/10.1111/ectj.12097" class="uri">https://doi.org/10.1111/ectj.12097</a></li>
+<li>Ahrens, A., Hansen, C. B., Schaffer, M. E., &amp; Wiemann, T. (2024). <code>ddml</code>: Double/debiased machine learning in R. <em>Journal of Statistical Software</em>, 108(3). <a href="https://doi.org/10.18637/jss.v108.i03" class="uri">https://doi.org/10.18637/jss.v108.i03</a></li>
+<li>Chen, T., &amp; Guestrin, C. (2016). XGBoost: A scalable tree boosting system. <em>KDD ’16</em>, 785–794. <a href="https://doi.org/10.1145/2939672.2939785" class="uri">https://doi.org/10.1145/2939672.2939785</a></li>
+</ul>
+
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

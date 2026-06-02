@@ -1,0 +1,74 @@
+# "Final" results using ddml (multiple resamples, median aggregation)
+# 1. Set seed for replicability.
+# 2. Use 11 separate cross-fit splits (reps = 11).
+# 3. Use 10-fold cross-fitting in each rep.
+# 4. Short-stacking via nnls1 in each rep (automatic in ddml).
+# 5. Aggregate coefficients (mean and median).
+# 6. Report stacking weights across reps.
+
+# Reload data for fresh start
+gn <- read_dta("https://dmlguide.github.io/assets/dta/GN2021.dta")
+gn$sd_EE <- gn$sd_of_gen_mean_temp_anom_EE
+gn <- gn |> filter(!is.na(loggdp))
+
+Y <- gn[[Y_var]]
+D <- gn[[D_var]]
+X <- as.matrix(gn[, X_vars])
+
+# Step 1: Set seed for replicability
+set.seed(42)
+
+# Step 2: Run ddml_plm 11 times with different random splits
+# Note: the R ddml package does not have a built-in reps() argument,
+# so we loop manually and aggregate following Chernozhukov et al.
+
+K <- 10
+R <- 11
+
+coef_vec  <- numeric(R)
+se_vec    <- numeric(R)
+weights_Y <- matrix(NA_real_, nrow = 3, ncol = R)
+weights_D <- matrix(NA_real_, nrow = 3, ncol = R)
+
+for (r in 1:R) {
+  cat(sprintf("Processing resample %d of %d...\n", r, R))
+
+  fit_r <- ddml_plm(
+    y             = Y,
+    D             = D,
+    X             = X,
+    learners      = learners,
+    sample_folds  = 10,
+    ensemble_type = "nnls1",
+    shortstack    = TRUE,
+    cv_folds      = 5,
+    silent        = TRUE
+  )
+
+  # Residualise Y and D using the short-stacked predictions, then
+  # estimate theta and its HC1-robust SE from the standard PLR moment.
+  resY <- as.numeric(Y - fit_r$fitted$y_X$cf_fitted[, "nnls1"])
+  resD <- as.numeric(D - fit_r$fitted$D1_X$cf_fitted[, "nnls1"])
+  fit_resid    <- lm(resY ~ resD)
+  coef_vec[r]  <- coef(fit_resid)["resD"]
+  se_vec[r]    <- sqrt(diag(vcovHC(fit_resid, type = "HC1")))["resD"]
+
+  # Extract stacking weights (current ddml uses $ensemble_weights)
+  weights_Y[, r] <- fit_r$ensemble_weights$y_X[, "nnls1"]
+  weights_D[, r] <- fit_r$ensemble_weights$D1_X[, "nnls1"]
+}
+
+# Aggregate following DoubleML's median-of-CI formula
+cv        <- 1.96
+b_med     <- median(coef_vec)
+se_med    <- (median(coef_vec + cv*se_vec) - median(coef_vec - cv*se_vec)) / (2*cv)
+b_mean    <- mean(coef_vec)
+se_mean   <- mean(se_vec)
+
+agg_summary <- data.frame(
+  spec = c("shortstack mean", "shortstack median"),
+  b    = c(b_mean, b_med),
+  se   = c(se_mean, se_med)
+)
+cat("\nMean/median aggregated short-stack results:\n")
+print(agg_summary, row.names = FALSE)

@@ -1,0 +1,2 @@
+Short-stack NNLS weights (Y eq):  OLS=0.000, Lasso=0.525, RF=0.475
+Short-stack NNLS weights (D eq):  OLS=0.000, Lasso=0.335, RF=0.665

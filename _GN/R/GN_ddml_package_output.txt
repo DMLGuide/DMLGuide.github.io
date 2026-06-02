@@ -1,0 +1,93 @@
+# Outputs produced by GN_ddml_package.R (K = 10 folds).
+# `# @snippet:NAME ... # @end` blocks are imported by examples/GN.md via
+# _includes/GN/ — keep these in sync with the .R script when re-running.
+
+R version:
+[1] "R version 4.5.1 (2025-06-13 ucrt)"
+
+
+# @snippet:ols_out
+t test of coefficients:
+
+                    Estimate Std. Error t value  Pr(>|t|)
+(Intercept)        6.5761120  0.5359645 12.2697 < 2.2e-16 ***
+sd_EE             -1.8235164  0.6958312 -2.6206  0.010817 *
+v104_ee            0.0054164  0.0053679  1.0090  0.316534
+settlement_ee     -0.0651081  0.0347562 -1.8733  0.065328 .
+polhierarchies_ee  0.0127799  0.0971405  0.1316  0.895720
+loggdp            -0.1648961  0.0486385 -3.3902  0.001166 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# @end
+
+
+# @snippet:dml_out
+DDML estimation: Partially Linear Model
+Obs: 74   Folds: 10  Stacking: short-stack
+
+            Estimate Std. Error z value Pr(>|z|)
+D1          -2.06604    0.85642   -2.41    0.016 *
+(Intercept)  0.00281    0.05339    0.05    0.958
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# @end
+
+
+# @snippet:ssw_out
+$y_X
+             nnls1
+[1,] -4.790797e-17
+[2,]  2.209719e-01
+[3,]  7.790281e-01
+
+$D1_X
+             nnls1
+[1,] -2.759759e-17
+[2,]  2.180738e-01
+[3,]  7.819262e-01
+# @end
+
+
+# @snippet:rbl_est_out
+DML estimates by learner (resid_Y ~ resid_D, HC1 robust SE):
+  spec         b      se_d    intercept     se_int
+   OLS -1.744850 0.7226074 -0.010256185 0.05786292
+ Lasso -1.713238 0.7147755  0.001572231 0.05691008
+    RF -2.126607 0.8484537  0.002987867 0.05330342
+    SS -2.066040 0.8564242  0.002813695 0.05338584
+# @end
+
+
+# @snippet:final_out
+Mean/median aggregated short-stack results:
+              spec         b        se
+   shortstack mean -2.066484 0.7916755
+ shortstack median -2.080807 0.7847372
+# @end
+
+
+# @snippet:fsw_out
+short-stacked weights across resamples for A198new (11 reps)
+        learner mean_weight     rep_1     rep_2     rep_3   rep_4     rep_5     rep_6
+ols         ols   0.1175242 0.0000000 0.1152903 0.0000000 0.00000 0.0000000 0.2886355
+lassocv lassocv   0.1290396 0.3513153 0.0000000 0.4379394 0.00000 0.0000000 0.0000000
+rf           rf   0.7534362 0.1435329 0.1280935 0.1165952 0.22433 0.0000000 0.3811269
+             rep_7     rep_8     rep_9    rep_10    rep_11
+ols     0.0775156 0.2935283 0.8564671 0.8719065 0.7547676
+lassocv 0.1286372 0.7756691 0.8847097 0.6188731 0.9743389
+rf      0.0256611 0.6486847 0.7113645 0.4845450 0.7064717
+
+short-stacked weights across resamples for sd_EE (11 reps)
+        learner mean_weight     rep_1     rep_2     rep_3     rep_4     rep_5     rep_6
+ols         ols  0.01031469 0.0000000 0.0000000 0.0000000 0.0000000 0.0963622 0.0833967
+lassocv lassocv  0.15198133 0.0000000 0.1134616 0.0000000 0.0000000 0.1697869 0.1144639
+rf           rf  0.83770398 0.0000000 0.0000000 0.0000000 0.1445204 0.1756197 0.2032019
+            rep_7     rep_8     rep_9    rep_10    rep_11
+ols     0.1236532 0.1996723 0.8302131 0.8855361 0.8000375
+lassocv 0.1999625 0.8554796 0.8243803 0.7967981 0.8388451
+rf      0.1611549 0.9036378 0.8031417 0.8763468 0.8003277
+# @end
+
+
+========================================
+GN replication complete!

@@ -1,0 +1,25 @@
+{% if include.title %}
+<details class="codetabs-collapsible" markdown="block"{% if include.open %} open{% endif %}>
+<summary>{{ include.title }}</summary>
+{% endif %}
+<div class="codetabs">
+  <input type="radio" id="ct-{{ include.id }}-stata"  name="codetab-{{ include.id }}" class="ct-radio ct-stata"  checked />
+  <label for="ct-{{ include.id }}-stata"  class="codetab-label">Stata</label>
+  <input type="radio" id="ct-{{ include.id }}-r"      name="codetab-{{ include.id }}" class="ct-radio ct-r" />
+  <label for="ct-{{ include.id }}-r"      class="codetab-label">R</label>
+  <input type="radio" id="ct-{{ include.id }}-python" name="codetab-{{ include.id }}" class="ct-radio ct-python" />
+  <label for="ct-{{ include.id }}-python" class="codetab-label">Python</label>
+
+  <div class="codetab-content codetab-stata" markdown="1">
+{{ include.stata }}
+  </div>
+  <div class="codetab-content codetab-r" markdown="1">
+{{ include.r }}
+  </div>
+  <div class="codetab-content codetab-python" markdown="1">
+{{ include.python }}
+  </div>
+</div>
+{% if include.title %}
+</details>
+{% endif %}

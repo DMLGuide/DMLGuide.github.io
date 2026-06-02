@@ -1,0 +1,6 @@
+DML estimates by learner (resid_Y ~ resid_D, HC1 robust SE):
+ spec         b     se_d  intercept   se_int
+  OLS -1.851188 0.684268  -0.005177 0.054723
+Lasso -1.871904 0.689664  -0.004357 0.053601
+   RF -2.353444 0.740676  -0.003409 0.052612
+   SS -2.326678 0.771804  -0.004310 0.051630

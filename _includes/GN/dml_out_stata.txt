@@ -1,0 +1,22 @@
+Model:                  partial, crossfit folds k=10, resamples r=1
+Mata global (mname):    m0
+Dependent variable (Y): A198new
+ A198new learners:      Y1_pystacked
+D equations (1):        sd_EE
+ sd_EE learners:        D1_pystacked
+
+DDML estimation results:
+spec  r     Y learner     D learner         b        SE 
+  ss  1  [shortstack]          [ss]    -2.338    (0.805)
+
+Shortstack DDML model
+y-E[y|X]  = y-Y_A198new_ss_1                       Number of obs   =        74
+D-E[D|X]  = D-D_sd_EE_ss_1 
+------------------------------------------------------------------------------
+             |               Robust
+     A198new | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+       sd_EE |  -2.338472   .8052145    -2.90   0.004    -3.916663   -.7602802
+       _cons |  -.0069149   .0521399    -0.13   0.894    -.1091072    .0952774
+------------------------------------------------------------------------------
+Stacking final estimator: nnls1

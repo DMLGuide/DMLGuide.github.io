@@ -1,0 +1,2 @@
+// Display the short-stack weights.
+ddml extract, show(ssweights)

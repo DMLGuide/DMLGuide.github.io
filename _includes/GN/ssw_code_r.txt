@@ -1,0 +1,2 @@
+# Display short-stack weights from the single-split fit.
+print(ddml_fit$ensemble_weights)

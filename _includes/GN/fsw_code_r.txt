@@ -1,0 +1,16 @@
+rownames(weights_Y) <- rownames(weights_D) <- c("ols", "lassocv", "rf")
+rep_names <- paste0("rep_", 1:R)
+
+ssweights_Y <- data.frame(learner = c("ols", "lassocv", "rf"),
+                          mean_weight = rowMeans(weights_Y))
+ssweights_Y[rep_names] <- t(weights_Y)
+
+ssweights_D <- data.frame(learner = c("ols", "lassocv", "rf"),
+                          mean_weight = rowMeans(weights_D))
+ssweights_D[rep_names] <- t(weights_D)
+
+cat("\nshort-stacked weights across resamples for A198new (11 reps)\n")
+print(ssweights_Y)
+
+cat("\nshort-stacked weights across resamples for sd_EE (11 reps)\n")
+print(ssweights_D)

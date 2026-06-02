@@ -1,0 +1,11 @@
+print("\nshort-stack NNLS weights across resamples for A198new (11 reps)")
+dfY = pd.DataFrame(wY_all, index=["OLS", "Lasso", "RF"],
+                   columns=[f"rep_{i+1}" for i in range(R)])
+dfY.insert(0, "mean_weight", wY_all.mean(axis=1))
+print(dfY.to_string(float_format=lambda x: f"{x:.4f}"))
+
+print("\nshort-stack NNLS weights across resamples for sd_EE (11 reps)")
+dfD = pd.DataFrame(wD_all, index=["OLS", "Lasso", "RF"],
+                   columns=[f"rep_{i+1}" for i in range(R)])
+dfD.insert(0, "mean_weight", wD_all.mean(axis=1))
+print(dfD.to_string(float_format=lambda x: f"{x:.4f}"))

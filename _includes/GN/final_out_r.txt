@@ -1,0 +1,4 @@
+Mean/median aggregated short-stack results:
+              spec         b        se
+   shortstack mean -2.066484 0.7916755
+ shortstack median -2.080807 0.7847372

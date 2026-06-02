@@ -1,0 +1,31 @@
+// In the GN estimations, GDP is missing for one country.
+// For simplicity, we just drop this one country so that it is never used.
+drop if missing(loggdp)
+
+// To make the code more readable, define locals for Y, D and X:
+local Y_var "A198new"
+local D_var "sd_EE"
+local X_vars "v104_ee settlement_ee polhierarchies_ee loggdp"
+
+// In Stata, we now use ddml with pystacked for OLS, cross-validated lasso,
+// and random forest learners combined via short-stacking (nnls1).
+
+// Step 1: Initialize ddml for partially linear model
+ddml init partial, kfolds(10)
+
+// Step 2: Specify the model components
+// Outcome equation
+ddml E[Y|X]: pystacked `Y_var' `X_vars', ///
+    type(reg) methods(ols lassocv rf)
+
+// Treatment equation
+ddml E[D|X]: pystacked `D_var' `X_vars', ///
+    type(reg) methods(ols lassocv rf)
+
+// Step 3: Cross-fit with short-stacking
+// Set seed for this single split
+set seed 12345
+ddml crossfit, shortstack nostdstack
+
+// Step 4: Estimate the partially linear model
+ddml estimate, robust

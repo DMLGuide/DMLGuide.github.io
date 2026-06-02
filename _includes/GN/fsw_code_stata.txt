@@ -1,0 +1,4 @@
+// Display the stacking weights.
+// As before, unregularized OLS gets a low weight for both Y and D,
+// and the random forest learner gets a substantial weight in both.
+ddml extract, show(ssweights)

@@ -1,0 +1,56 @@
+%----------------------------------
+\subsection{Revisiting \citet{angrist1998children}}\label{sec:angrist_evans}
+
+While ML tools allow relaxing common assumptions on the functional form of nuisance components, there are scenarios where carefully justified functional restrictions are required for identification and where a fully flexible nuisance function estimator is unwanted. To demonstrate this issue, we follow \citet[][henceforth AF]{angrist2022} in revisiting \citet[][henceforth AE]{angrist1998children}. The original study estimates the effect of giving birth to a third child on the mother's employment status using a binary same-sex indicator of the first two children as the IV. The rationale for the IV choice is that women are more likely to have a third child if the first two children are of the same sex. Since the mother's employment decision could also be affected by the first and second child's sex individually, as well as by other demographic characteristics, AE include the first and second child's sex as controls along with other socio-demographic characteristics. %the mother's age, her age when giving birth to the first child, indicators for black, hispanic and other race, and the mother's years of education. 
+
+AF consider random forests to control for these confounders in the Partially Linear IV model (see Table~\ref{tab:overview_scores}) where the nuisance functions are estimated by leave-one-out random forests \citep{athey2019generalized}. AF document that the random-forest-based estimates are imprecise compared to 2SLS. As the authors discuss, identification in AE relies on an additivity constraint imposing that $boy1st_i$ and $boy2nd_i$ must not interact. Since random forests learn interaction effects in a data-driven manner, a well-tuned random forest may yield nuisance function estimates such that $Z-\hat{r}(X)\approx 0$.
+
+    \begin{figure}[htb]
+        \centering\scriptsize
+        \begin{subfigure}{.5\linewidth}
+            \includegraphics[width=\linewidth,clip,trim={0 5cm 0 5cm}]{figures/tree1.png}
+            \caption{Legal tree}
+        \end{subfigure}%
+        \begin{subfigure}{.5\linewidth}
+            \includegraphics[width=\linewidth,clip,trim={0 5cm 0 5cm}]{figures/tree2.png}
+            \caption{Illegal tree}
+        \end{subfigure}
+        \par\medskip
+        \parbox{\linewidth}{\emph{Notes:} The two figures show two decision trees grown on bootstrapped samples of size 2000 using the data of \citet{angrist1998children}. The outcome is a binary indicator (labeled as $morekids_i$) set to one if a woman gives birth to more than two kids and zero otherwise. The predictors are mothers' years of education ($educm_i$), mothers' age ($agem_i$), and indicators for whether the first and second child is a boy (denoted $boy1st_i$ and $boy2nd_i$). The left tree is legal since $boy1st_i$ and $boy2nd_i$ do not interact, i.e., are not associated with the same leaf. The right tree violates the additivity assumption. The predicted outcome is shown in rounded boxes at the bottom.}
+        \caption{Two exemplary decision trees}
+        \label{fig:explaining_trees}
+    \end{figure}
+
+Figure~\ref{fig:explaining_trees} illustrates two exemplary decision trees which random forests are composed of. $morekids_i$ is used as the outcome, and $agem1_i$, $educm_i$, $boy1st_i$ and $boy2nd_i$ are the predictors. The left tree does not violate the additivity constraint, even though both $boy1st_i$ and $boy2nd_i$ feature in the same tree, since no leaf (also referred to as terminal node) is associated with both variables. The right tree does violate the additivity constraint since the decision rule corresponding to the right-most leaf predicts that mothers whose first and second child is female and who have at least 12 years of education will have a third child. 
+
+The illustration reveals that, since we can easily identify and discard illegal trees, we could, in principle, fit a constrained random forest only using legal trees. There is, to our knowledge, no readily available random forest implementation that allows for interaction constraints, but such interaction constraints are supported by \texttt{XGBoost} \citep{chen2016}, a widely popular implementation for gradient-boosted trees. %Similar to random forests, gradient-boosted trees rely on many trees.
+We follow AF but consider various DDML estimators which comply with the additivity constraint. Namely, we use OLS with the base controls, CV lasso and ridge with third-order polynomials which are separately formed for $boy1st_i$ and $boy2nd_i$, and \texttt{XGBoost} which only uses additivity-compliant trees. We also consider DDML paired with stacking combining these learners. For comparison, we report TSLS estimates and DDML with unconstrained \texttt{XGBoost}. Furthermore, to learn more about the distribution of each estimator, we conduct a simulation exercise involving 500 bootstrap samples of $n_b=20000$. The results are shown in Table~\ref{tab:angrist_evans_main}, Panel~A, where we list the average coefficient estimates as well as standard deviations over bootstrap iterations in parentheses. Our results indicate little differences among DDML estimators as well as in comparison to TSLS. Importantly, we find that unconstrained \texttt{XGBoost} behaves markedly differently from the constrained \texttt{XGBoost}, which similar to the random-forest-based results in AF exhibit larger average coefficient estimates and large standard deviation. 
+
+    \begin{table}[htb]
+        \centering\scriptsize\singlespacing
+        \caption{Simulation based on \citet{angrist1998children}}\label{tab:angrist_evans_main}
+        %\begin{threeparttable}
+        %\resizebox{\linewidth}{!}{%
+        \begin{tabular}{llccccccccccc}
+        \hline\hline
+        & & TSLS & \multicolumn{6}{c}{DDML}  \\
+        \cline{4-9}
+        &Equation &   & OLS & lasso & ridge & XGBoost(c) & stacking  & XGBoost \\
+        %\cline{3-8}
+        %& & \\
+        \hline
+        \multicolumn{5}{l}{\it Panel A. Original IV:}\\
+        \partialinput{1}{4}{application_AE/artificialIV_dgp3}
+        \multicolumn{5}{l}{\it Panel B. Artificial IV:} \\
+        \partialinput{1}{4}{application_AE/artificialIV_dgp1}
+        \multicolumn{5}{l}{\it Panel C. IV with some signal:}\\
+        \partialinput{1}{4}{application_AE/artificialIV_dgp2}
+        \hline\hline
+        \end{tabular} 
+         \par\medskip
+        \parbox{\linewidth}{\emph{Notes:} 500 bootstrap replications of size $n_b=20,000$, s.e. in parentheses are calculated as standard deviation over coefficient estimates. OLS, lasso and ridge use 3rd order polynomials and interaction separately for first-child sex dummy $\times$ covariates and 2nd-child sex dummy $\times$ covariates. XGBoost(c) is impose a constraint on interactions between first and second child sex. Stacking uses OLS, lasso, Ridge and XGBoost(c) as base learners. Row `Index' reports slope coefficient from regressing residualized IVs against \textit{agem1+educm}. Row `First stage' reports slope coefficient of regression residualized treatment (i.e., \textit{morekids}) against residualized IV. Rows `employment' and `weeks worked' report effect of more than 2 kids on outcome.}
+        %\end{tablenotes}
+        %\end{threeparttable}
+    \end{table}
+
+The application illustrates that machine learning does not protect us from needing to impose constraints necessary for identification. In TSLS estimation, we guarantee identification by \emph{not} including the interaction term $boy1st_i\times boy2nd_i$ as an excluded IV. There is a direct counterpart in tree-based methods where we can, and should, impose a ban on decision rules involving both $boy1st_i$ and $boy2nd_i$. The risk in using flexible methods stems from hidden identification assumptions---in this example, additivity---which, when ignored and not enforced, may lead to spurious results. 

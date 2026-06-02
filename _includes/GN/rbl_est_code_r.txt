@@ -1,0 +1,32 @@
+# The ddml_plm fit object exposes per-learner OOF residuals via
+#   fit$fitted$y_X$cf_resid_bylearner    (n x #learners)
+#   fit$fitted$D1_X$cf_resid_bylearner
+# and the short-stacked predictions via $cf_fitted.
+
+Y_resids <- list(
+  OLS   = ddml_fit$fitted$y_X$cf_resid_bylearner[, 1],
+  Lasso = ddml_fit$fitted$y_X$cf_resid_bylearner[, 2],
+  RF    = ddml_fit$fitted$y_X$cf_resid_bylearner[, 3],
+  SS    = as.numeric(Y - ddml_fit$fitted$y_X$cf_fitted[, "nnls1"])
+)
+D_resids <- list(
+  OLS   = ddml_fit$fitted$D1_X$cf_resid_bylearner[, 1],
+  Lasso = ddml_fit$fitted$D1_X$cf_resid_bylearner[, 2],
+  RF    = ddml_fit$fitted$D1_X$cf_resid_bylearner[, 3],
+  SS    = as.numeric(D - ddml_fit$fitted$D1_X$cf_fitted[, "nnls1"])
+)
+
+# Comparison table: HC1 robust SE per learner
+build_row <- function(key) {
+  est <- lm(Y_resids[[key]] ~ D_resids[[key]])
+  ct  <- coeftest(est, vcov = vcovHC(est, type = "HC1"))
+  data.frame(
+    spec      = key,
+    b         = unname(ct[2, "Estimate"]),
+    se_d      = unname(ct[2, "Std. Error"]),
+    intercept = unname(ct[1, "Estimate"]),
+    se_int    = unname(ct[1, "Std. Error"])
+  )
+}
+tab <- do.call(rbind, lapply(c("OLS", "Lasso", "RF", "SS"), build_row))
+print(tab, row.names = FALSE)

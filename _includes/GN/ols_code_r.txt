@@ -1,0 +1,22 @@
+set.seed(42)
+
+library(haven)
+library(dplyr)
+library(sandwich)
+library(lmtest)
+library(ggplot2)
+library(ddml)
+library(ranger)
+library(glmnet)
+
+# Load data
+gn <- read_dta("https://dmlguide.github.io/assets/dta/GN2021.dta")
+
+# Shorten the name of the causal variable of interest to sd_EE
+gn$sd_EE <- gn$sd_of_gen_mean_temp_anom_EE
+
+# Replicate Table 1, column (4): OLS with the 4 controls, HC1 robust SE.
+# lm() drops the country with missing loggdp automatically (N = 74).
+model_full <- lm(A198new ~ sd_EE + v104_ee + settlement_ee +
+                          polhierarchies_ee + loggdp, data = gn)
+coeftest(model_full, vcov = vcovHC(model_full, type = "HC1"))

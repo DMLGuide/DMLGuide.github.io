@@ -1,0 +1,30 @@
+import matplotlib.pyplot as plt
+
+iso = gn["isocode"].to_numpy()
+
+fig, axes = plt.subplots(2, 2, figsize=(9, 7))
+panels = [
+    ("OLS",   "Y and D: Unregularized OLS"),
+    ("Lasso", "Y and D: Lasso"),
+    ("RF",    "Y and D: Random Forest"),
+    ("SS",    "Y and D: Short-stacked"),
+]
+for ax, (key, title) in zip(axes.flat, panels):
+    rY, rD = resY_dict[key], resD_dict[key]
+    ax.scatter(rD, rY, color="#1f77b4", s=14)
+    for x, y, lab in zip(rD, rY, iso):
+        ax.text(x, y, str(lab), color="#1f77b4",
+                fontsize=7, va="bottom", ha="center")
+    Xc  = sm.add_constant(rD)
+    f_k = sm.OLS(rY, Xc).fit()
+    xs  = np.linspace(rD.min(), rD.max(), 50)
+    ax.plot(xs, f_k.params[0] + f_k.params[1] * xs,
+            color="#B1004F", linewidth=1.5)
+    ax.set_xlim(-0.3, 0.3); ax.set_ylim(-2, 2)
+    ax.set_title(title, fontsize=10, fontweight="bold")
+    ax.set_xlabel("Climatic instability", fontsize=9)
+    ax.set_ylabel("Importance of tradition", fontsize=9)
+    ax.grid(False)
+
+plt.tight_layout()
+plt.show()

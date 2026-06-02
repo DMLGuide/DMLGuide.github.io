@@ -3,16 +3,120 @@ layout: default
 title: Examples
 nav_order: 3
 math: true
+has_toc: false
+has_children: true
 description: "A collection of double/debiased machine learning examples."
 permalink: /examples
 ---
 
 # Examples
 
-On this page, we discuss three applications:
- 
-- *"The Effect of 401k Eligibility on Financial Wealth"* is a toy example that shows you how you can estimate partially linear (IV) regression coefficients, average treatment effects and local average treatment effects using DML.
-- *"Understanding Cultural Persistence and Change"* focuses on the partially linear model. The application illustrates how to employ DML in practice, and highlights some of the most important pitfalls.
-- *"Dynamic Effects on Hospitalization"* showcasts DML estimation in difference-in-differences designs under conditional parallel trends assumptions.
+Here you find a collection of DML illustrations. 
 
-We provide both R and Stata code for you to run these examples. You can also find the replication repository for the JEL paper here: **link to be added**.
+<div class="example-grid">
+
+  <a class="example-tile" href="{{ '/examples/401k' | relative_url }}">
+    <div class="example-tile-icon">
+      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8"  y1="56" x2="78" y2="56" opacity="0.4"/>
+        <rect x="12" y="40" width="10" height="16" rx="1"/>
+        <rect x="26" y="32" width="10" height="24" rx="1"/>
+        <rect x="40" y="22" width="10" height="34" rx="1"/>
+        <rect x="54" y="12" width="10" height="44" rx="1"/>
+        <text x="72" y="20" font-size="14" font-weight="700" stroke="none" fill="currentColor" text-anchor="middle">$</text>
+      </svg>
+    </div>
+    <div class="example-tile-body">
+      <div class="example-tile-title">401(k) Eligibility</div>
+      <p class="example-tile-blurb">A toy starter: estimating PLR coefficients, ATEs, and LATEs with DML.</p>
+      <p class="example-tile-tags">PLR · ATE · LATE</p>
+    </div>
+  </a>
+
+  <!-- Temporarily hidden — re-enable by removing the surrounding comment.
+  <a class="example-tile" href="{{ '/examples/AngristEvans' | relative_url }}">
+    <div class="example-tile-icon">
+      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="10" cy="32" r="9"/>
+        <circle cx="40" cy="32" r="9"/>
+        <circle cx="70" cy="32" r="9"/>
+        <line x1="20" y1="32" x2="30" y2="32"/>
+        <path d="M 30 32 L 26 28 M 30 32 L 26 36"/>
+        <line x1="50" y1="32" x2="60" y2="32"/>
+        <path d="M 60 32 L 56 28 M 60 32 L 56 36"/>
+        <text x="10" y="36" font-size="11" font-weight="600" stroke="none" fill="currentColor" text-anchor="middle">Z</text>
+        <text x="40" y="36" font-size="11" font-weight="600" stroke="none" fill="currentColor" text-anchor="middle">D</text>
+        <text x="70" y="36" font-size="11" font-weight="600" stroke="none" fill="currentColor" text-anchor="middle">Y</text>
+      </svg>
+    </div>
+    <div class="example-tile-body">
+      <div class="example-tile-title">Angrist &amp; Evans IV</div>
+      <p class="example-tile-blurb">Revisiting the <em>Machine Labor</em> critique: DML reproduces 2SLS where naive ML fails.</p>
+      <p class="example-tile-tags">IV · PLIV</p>
+    </div>
+  </a>
+  -->
+
+
+  <a class="example-tile" href="{{ '/examples/GN' | relative_url }}">
+    <div class="example-tile-icon">
+      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M 6 40 Q 16 28 26 40 T 46 40 T 66 40 T 86 40" opacity="0.35"/>
+        <circle cx="16" cy="14" r="4" fill="currentColor"/>
+        <circle cx="32" cy="22" r="4" fill="currentColor"/>
+        <circle cx="48" cy="34" r="4" fill="currentColor"/>
+        <circle cx="62" cy="48" r="4" fill="currentColor"/>
+        <line x1="19" y1="16" x2="29" y2="20"/>
+        <line x1="35" y1="24" x2="45" y2="32"/>
+        <line x1="51" y1="36" x2="59" y2="46"/>
+      </svg>
+    </div>
+    <div class="example-tile-body">
+      <div class="example-tile-title">Cultural Persistence</div>
+      <p class="example-tile-blurb">PLM in a small cross-section: climate volatility and tradition (Giuliano &amp; Nunn).</p>
+      <p class="example-tile-tags">PLM · small N</p>
+    </div>
+  </a>
+
+  <a class="example-tile" href="{{ '/examples/HRS' | relative_url }}">
+    <div class="example-tile-icon">
+      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8"  y1="56" x2="74" y2="56" opacity="0.4"/>
+        <line x1="8"  y1="56" x2="8"  y2="8"  opacity="0.4"/>
+        <line x1="42" y1="10" x2="42" y2="56" stroke-dasharray="3,3" opacity="0.45"/>
+        <path d="M 12 46 L 42 42 L 72 38"/>
+        <path d="M 12 36 L 42 32 L 42 18 L 72 12" stroke-width="2.5"/>
+      </svg>
+    </div>
+    <div class="example-tile-body">
+      <div class="example-tile-title">Hospitalization Effects</div>
+      <p class="example-tile-blurb">DML for difference-in-differences under conditional parallel trends.</p>
+      <p class="example-tile-tags">DiD · panel</p>
+    </div>
+  </a>
+
+  <!-- Temporarily hidden — re-enable by removing the surrounding comment.
+  <a class="example-tile" href="{{ '/examples/Monopsony_DML' | relative_url }}">
+    <div class="example-tile-icon">
+      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="6" y="8" width="68" height="48" rx="3"/>
+        <line x1="6" y1="20" x2="74" y2="20"/>
+        <circle cx="11" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+        <circle cx="16" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+        <circle cx="21" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+        <line x1="12" y1="30" x2="50" y2="30" stroke-width="2"/>
+        <line x1="12" y1="38" x2="58" y2="38" stroke-width="1.4" opacity="0.55"/>
+        <line x1="12" y1="44" x2="50" y2="44" stroke-width="1.4" opacity="0.55"/>
+        <text x="68" y="53" font-size="8" font-weight="700" stroke="none" fill="currentColor" text-anchor="end">$10</text>
+      </svg>
+    </div>
+    <div class="example-tile-body">
+      <div class="example-tile-title">Monopsony on MTurk</div>
+      <p class="example-tile-blurb">Estimating the labor supply elasticity with fine-tuned DeBERTa embeddings.</p>
+      <p class="example-tile-tags">Text · embeddings · 3 parts</p>
+    </div>
+  </a>
+  -->
+
+
+</div>
