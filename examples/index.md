@@ -13,11 +13,88 @@ permalink: /examples
 
 Here you find a collection of DML illustrations. 
 
+<style>
+  /* Belt-and-suspenders: inline the tile styles here so they apply even if
+     _sass/custom/custom.scss is not picked up in some build environments
+     (e.g. some GitHub Pages configurations). */
+  .example-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin: 2rem 0 1rem;
+  }
+  .example-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: 1 / 1;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    background-image: none !important;
+  }
+  .example-tile:hover,
+  .example-tile:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(128, 0, 0, 0.14);
+    border-color: #800000;
+    background-image: none !important;
+    outline: none;
+  }
+  .example-tile-icon {
+    flex: 0 0 54%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #800000;
+    background: linear-gradient(135deg, rgba(128, 0, 0, 0.05) 0%, rgba(128, 0, 0, 0.11) 100%);
+    border-bottom: 1px solid rgba(128, 0, 0, 0.08);
+  }
+  .example-tile-icon svg {
+    width: 62%;
+    height: 62%;
+    max-width: 120px;
+    max-height: 90px;
+  }
+  .example-tile-body {
+    flex: 1 1 auto;
+    padding: 0.85rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .example-tile-title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #800000 !important;
+    margin: 0 0 0.35rem !important;
+    line-height: 1.2;
+  }
+  .example-tile-blurb {
+    font-size: 0.8rem;
+    color: #4a4a4a;
+    margin: 0 0 auto !important;
+    line-height: 1.4;
+  }
+  .example-tile-tags {
+    font-size: 0.68rem;
+    color: #767676;
+    margin: 0.55rem 0 0 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+</style>
+
 <div class="example-grid">
 
   <a class="example-tile" href="{{ '/examples/401k' | relative_url }}">
     <div class="example-tile-icon">
-      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="8"  y1="56" x2="78" y2="56" opacity="0.4"/>
         <rect x="12" y="40" width="10" height="16" rx="1"/>
         <rect x="26" y="32" width="10" height="24" rx="1"/>
@@ -36,7 +113,7 @@ Here you find a collection of DML illustrations.
   <!-- Temporarily hidden — re-enable by removing the surrounding comment.
   <a class="example-tile" href="{{ '/examples/AngristEvans' | relative_url }}">
     <div class="example-tile-icon">
-      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="10" cy="32" r="9"/>
         <circle cx="40" cy="32" r="9"/>
         <circle cx="70" cy="32" r="9"/>
@@ -60,7 +137,7 @@ Here you find a collection of DML illustrations.
 
   <a class="example-tile" href="{{ '/examples/GN' | relative_url }}">
     <div class="example-tile-icon">
-      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M 6 40 Q 16 28 26 40 T 46 40 T 66 40 T 86 40" opacity="0.35"/>
         <circle cx="16" cy="14" r="4" fill="currentColor"/>
         <circle cx="32" cy="22" r="4" fill="currentColor"/>
@@ -80,7 +157,7 @@ Here you find a collection of DML illustrations.
 
   <a class="example-tile" href="{{ '/examples/HRS' | relative_url }}">
     <div class="example-tile-icon">
-      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="8"  y1="56" x2="74" y2="56" opacity="0.4"/>
         <line x1="8"  y1="56" x2="8"  y2="8"  opacity="0.4"/>
         <line x1="42" y1="10" x2="42" y2="56" stroke-dasharray="3,3" opacity="0.45"/>
@@ -98,7 +175,7 @@ Here you find a collection of DML illustrations.
   <!-- Temporarily hidden — re-enable by removing the surrounding comment.
   <a class="example-tile" href="{{ '/examples/Monopsony_DML' | relative_url }}">
     <div class="example-tile-icon">
-      <svg viewBox="0 0 80 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="6" y="8" width="68" height="48" rx="3"/>
         <line x1="6" y1="20" x2="74" y2="20"/>
         <circle cx="11" cy="14" r="1.4" fill="currentColor" stroke="none"/>
