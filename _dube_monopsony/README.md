@@ -1,6 +1,6 @@
 # Dube et al. monopsony — blog series source
 
-Source files for the three-part *Monopsony* DDML series. The folder mirrors the
+Source files for the three-part *Monopsony* DML series. The folder mirrors the
 layout of `_angristevans/`: per-post Quarto documents alongside the R scripts
 that produce their results files (Parts 1 and 2 only — Part 3 reads its inputs
 directly inside the qmd), wired together by a `Makefile`. Quarto renders each
@@ -8,8 +8,8 @@ post into the served `examples/` directory:
 
 | Post | Quarto source | R analysis script | Inputs | Rendered |
 | --- | --- | --- | --- | --- |
-| Monopsony I — DDML in the simplest setting | `Monopsony_DML.qmd` | `blog1_wo_embed.R` | `results_entry1.rds` | `../examples/Monopsony_DML.md` |
-| Monopsony II — DDML with fine-tuned embeddings | `Monopsony_Finetune.qmd` | `blog2_w_embed.R` | `results_entry2.rds` | `../examples/Monopsony_Finetune.md` |
+| Monopsony I — DML in the simplest setting | `Monopsony_DML.qmd` | `blog1_wo_embed.R` | `results_entry1.rds` | `../examples/Monopsony_DML.md` |
+| Monopsony II — DML with fine-tuned embeddings | `Monopsony_Finetune.qmd` | `blog2_w_embed.R` | `results_entry2.rds` | `../examples/Monopsony_Finetune.md` |
 | Monopsony III — Robustness checks | `Monopsony_Robustness.qmd` | — (inlined in qmd) | `monopsony_data/intermediate/{iid_K3,xclust_K3,xclust_K5}/*.RData` | `../examples/Monopsony_Robustness.md` |
 
 The folder name has a leading underscore, so Jekyll skips it when serving the
@@ -72,7 +72,7 @@ five seeds and three (xfit_mode, K) combinations.
 
 ### Entry 1 — `blog1_wo_embed.R` (Monopsony I)
 
-The simplest possible DDML estimate of $\theta_0$ in
+The simplest possible DML estimate of $\theta_0$ in
 $\log(\text{duration}) = \theta_0 \log(\text{reward}) + g_0(X) + \varepsilon$:
 **one** learner (XGBoost "XGB 2" spec from the paper), **no** text embeddings,
 hand-coded controls only. Recruiter-honest folds with `cluster_variable =

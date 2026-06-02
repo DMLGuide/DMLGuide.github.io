@@ -171,7 +171,7 @@ estimate <- function(d, yvar = "workedm", single_learners = FALSE, constraint=FA
     filter(term == Z_var) %>%
     mutate(estimator = "tsls", spec = "first_stage", learner = "ols")
 
-  # ---- DDML stacked (4 learners) ----
+  # ---- DML stacked (4 learners) ----
   specs_stack <- make_learner_specs(constraint = constraint,
                                     base_idx = base_idx, 
                                     poly_idx = poly_idx)
@@ -238,7 +238,7 @@ for (flavor in c("observed", "fake")) {
 }
 res <- bind_rows(res)
 
-# Persist results so the Quarto post can load them without re-running DDML.
+# Persist results so the Quarto post can load them without re-running DML.
 # Run this script from _angristevans/ (the Makefile target does so).
 arrow::write_parquet(res, "results.parquet")
 readr::write_csv(res,    "results.csv")

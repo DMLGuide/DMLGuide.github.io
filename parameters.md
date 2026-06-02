@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Common Target Parameters
-nav_order: 2
+nav_order: 20
 math: true
 description: "A list of common target parameters."
 permalink: /parameters

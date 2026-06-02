@@ -1,0 +1,129 @@
+Python version: 3.12.9 (main, Mar 27 2025, 19:42:53) [GCC 8.5.0 20210514 (Red Hat 8.5.0-24)]
+numpy version: 2.4.2
+pandas version: 2.2.3
+statsmodels version: 0.14.6
+sklearn version: 1.8.0
+scipy version: 1.17.0
+
+PART 1: OLS (A198new ~ sd_EE) with HC1 robust SE
+
+                            OLS Regression Results
+==============================================================================
+Dep. Variable:                A198new   R-squared:                       0.148
+Model:                            OLS   Adj. R-squared:                  0.136
+Method:                 Least Squares   F-statistic:                     13.54
+Date:                Sun, 15 Mar 2026   Prob (F-statistic):           0.000444
+Time:                        16:15:01   Log-Likelihood:                -55.012
+No. Observations:                  75   AIC:                             114.0
+Df Residuals:                      73   BIC:                             118.7
+Df Model:                           1
+Covariance Type:                  HC1
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+const          5.0063      0.139     35.908      0.000       4.728       5.284
+sd_EE         -1.9233      0.523     -3.679      0.000      -2.965      -0.881
+==============================================================================
+Omnibus:                        3.159   Durbin-Watson:                   2.091
+Prob(Omnibus):                  0.206   Jarque-Bera (JB):                2.498
+Skew:                          -0.431   Prob(JB):                        0.287
+Kurtosis:                       3.234   Cond. No.                         9.76
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity robust (HC1)
+
+PART 2: DML shortstack (single split), HC1 robust SE
+
+                            OLS Regression Results
+==============================================================================
+Dep. Variable:                      y   R-squared:                       0.082
+Model:                            OLS   Adj. R-squared:                  0.069
+Method:                 Least Squares   F-statistic:                     6.024
+Date:                Sun, 15 Mar 2026   Prob (F-statistic):             0.0165
+Time:                        16:15:07   Log-Likelihood:                -47.949
+No. Observations:                  74   AIC:                             99.90
+Df Residuals:                      72   BIC:                             104.5
+Df Model:                           1
+Covariance Type:                  HC1
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+const         -0.0045      0.055     -0.082      0.935      -0.113       0.104
+x1            -1.8540      0.755     -2.454      0.017      -3.360      -0.348
+==============================================================================
+Omnibus:                        5.636   Durbin-Watson:                   2.003
+Prob(Omnibus):                  0.060   Jarque-Bera (JB):                7.643
+Skew:                           0.188   Prob(JB):                       0.0219
+Kurtosis:                       4.529   Cond. No.                         13.4
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity robust (HC1)
+
+short-stacked weights across resamples for A198new
+
+ols      mean_weight=0.000000  rep_1=0.000000
+lassocv  mean_weight=0.526574  rep_1=0.526574
+rf       mean_weight=0.473426  rep_1=0.473426
+
+short-stacked weights across resamples for sd_EE
+
+ols      mean_weight=0.000000  rep_1=0.000000
+lassocv  mean_weight=0.288032  rep_1=0.288032
+rf       mean_weight=0.711968  rep_1=0.711968
+Processing resample 1 of 11...
+Processing resample 2 of 11...
+Processing resample 3 of 11...
+Processing resample 4 of 11...
+Processing resample 5 of 11...
+Processing resample 6 of 11...
+Processing resample 7 of 11...
+Processing resample 8 of 11...
+Processing resample 9 of 11...
+Processing resample 10 of 11...
+Processing resample 11 of 11...
+
+DDML shortstack results across 11 resamples (Python analogue of ss 1..11):
+
+ rep         b       se
+   1 -2.174906 0.777694
+   2 -2.005246 0.733645
+   3 -1.952383 0.746022
+   4 -2.171051 0.748162
+   5 -1.772011 0.717194
+   6 -2.081791 0.727338
+   7 -2.109276 0.745730
+   8 -1.910522 0.759032
+   9 -1.852482 0.743549
+  10 -1.878568 0.752346
+  11 -1.877904 0.724122
+
+Median aggregated short-stack results:
+
+   shortstack median  -1.9523832   0.7502300
+
+Mean/median aggregated short-stack results:
+
+
+Summary over 11 resamples:
+
+D_eqn      mean       min       p25       p50       p75       max
+sd_EE -1.980558 -2.174906 -2.095534 -1.952383 -1.878236 -1.772011
+
+short-stacked weights across resamples for A198new (11 reps)
+
+learner  mean_weight    rep_1    rep_2    rep_3    rep_4        rep_5    rep_6        rep_7        rep_8        rep_9       rep_10       rep_11
+    ols     0.049558 0.041081 0.000000 0.000000 0.504062 1.475376e-16 0.000000 1.352397e-17 3.313726e-18 6.830636e-17 2.852983e-17 6.938894e-18
+lassocv     0.425029 0.648084 0.413333 0.475142 0.119979 5.181897e-01 0.306642 5.253004e-01 3.933202e-01 3.853548e-01 4.702643e-01 4.197109e-01
+     rf     0.525412 0.310836 0.586667 0.524858 0.375959 4.818103e-01 0.693358 4.746996e-01 6.066798e-01 6.146452e-01 5.297357e-01 5.802891e-01
+
+short-stacked weights across resamples for sd_EE (11 reps)
+
+learner  mean_weight        rep_1    rep_2        rep_3    rep_4    rep_5    rep_6        rep_7    rep_8    rep_9  rep_10   rep_11
+    ols 2.266626e-17 1.583276e-18 0.000000 1.354567e-16 0.000000 0.000000 0.000000 1.122889e-16 0.000000 0.000000 0.00000 0.000000
+lassocv 2.922315e-01 2.579606e-01 0.315039 2.843371e-01 0.373906 0.289585 0.301121 2.927527e-01 0.267477 0.245324 0.25356 0.333485
+     rf 7.077685e-01 7.420394e-01 0.684961 7.156629e-01 0.626094 0.710415 0.698879 7.072473e-01 0.732523 0.754676 0.74644 0.666515
+
+========================================
+GN replication complete!

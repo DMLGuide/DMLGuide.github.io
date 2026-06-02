@@ -1,4 +1,4 @@
-# Three-post Monopsony DDML series.
+# Three-post Monopsony DML series.
 #
 # Targets (high-level):
 #   make data        -> rebuilds the shared analysis dataset (data/monopsony_blog.rds)

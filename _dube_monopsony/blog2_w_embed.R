@@ -145,6 +145,6 @@ ddml_ms <- list(
 )
 class(ddml_ms) <- "modelsummary_list"
 
-models <- list("DDML" = ddml_ms)
+models <- list("DML" = ddml_ms)
 saveRDS(models, out_file)
 cat("Wrote ", out_file, "\n", sep = "")

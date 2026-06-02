@@ -1,0 +1,47 @@
+// Restore each stored estimate so predict() uses the right regression,
+// then plot residualized Y vs residualized D with the fitted line.
+estimates restore ddml_L1_L1
+cap drop hat_1_1
+predict hat_1_1
+twoway (scatter Y_L1_r D_L1_r, msymbol(o) mlabel(isocode))			///
+	(line hat_1_1 D_L1_r, sort lwidth(thick)),					 	///
+	legend(off) xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)		///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Unregularized OLS")								///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability") name(OLS, replace)
+
+estimates restore ddml_L2_L2
+cap drop hat_2_2
+predict hat_2_2
+twoway (scatter Y_L2_r D_L2_r, msymbol(o) mlabel(isocode))			///
+	(line hat_2_2 D_L2_r, sort lwidth(thick)),					 	///
+	legend(off) xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)		///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Lasso")											///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability") name(Lasso, replace)
+
+estimates restore ddml_L3_L3
+cap drop hat_3_3
+predict hat_3_3
+twoway (scatter Y_L3_r D_L3_r, msymbol(o) mlabel(isocode))			///
+	(line hat_3_3 D_L3_r, sort lwidth(thick)),					 	///
+	legend(off) xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)		///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Random Forest")									///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability") name(RF, replace)
+
+estimates restore ddml_SS_SS
+cap drop hat_ss_ss
+predict hat_ss_ss
+twoway (scatter Y_ss_r D_ss_r, msymbol(o) mlabel(isocode))			///
+	(line hat_ss_ss D_ss_r, sort lwidth(thick)),				 	///
+	legend(off) xlabel(-0.3 -0.2 -0.1 0 0.1 0.2 0.3, nogrid)		///
+	ylabel(-2 -1 0 1 2, nogrid)										///
+	title("Y and D: Short-stacked")									///
+	ytitle("Importance of tradition")								///
+	xtitle("Climatic instability") name(SS, replace)
+
+graph combine OLS Lasso RF SS

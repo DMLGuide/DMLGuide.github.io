@@ -1,0 +1,8 @@
+DDML estimation: Partially Linear Model
+Obs: 74   Folds: 10  Stacking: short-stack
+
+            Estimate Std. Error z value Pr(>|z|)
+D1          -2.06604    0.85642   -2.41    0.016 *
+(Intercept)  0.00281    0.05339    0.05    0.958
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

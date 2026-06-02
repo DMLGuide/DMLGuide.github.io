@@ -1,4 +1,4 @@
-# `_angristevans/` — source for the "DDML for the Angrist & Evans" blog post
+# `_angristevans/` — source for the "DML for the Angrist & Evans" blog post
 
 This folder produces [`examples/AngristEvans.md`](../examples/AngristEvans.md), the website page that revisits Angrist & Evans (1998) through Angrist & Frandsen's (2022) critique and shows how to fix the ML-first-stage failure by encoding the no-interaction restriction directly into the learners.
 
@@ -8,7 +8,7 @@ Jekyll ignores any directory whose name starts with `_`, so this folder is *not*
 
 | File | Role |
 | --- | --- |
-| `AE_analysis.R` | Producer. Loads `pums80m.dta`, runs 2SLS and `ddml_pliv()` over 3 instruments × 2 outcomes × 2 constraint flags (12 DDML fits in total) and writes `results.parquet` + `results.csv`. Slow — full pums80m sample, no bootstrap. |
+| `AE_analysis.R` | Producer. Loads `pums80m.dta`, runs 2SLS and `ddml_pliv()` over 3 instruments × 2 outcomes × 2 constraint flags (12 DML fits in total) and writes `results.parquet` + `results.csv`. Slow — full pums80m sample, no bootstrap. |
 | `pums80m.dta` | Angrist & Evans (1998) replication data. |
 | `AngristEvans.qmd` | Consumer. Reads `results.parquet` and renders the blog post. All prose, math, and the per-instrument result tables live here. |
 | `_quarto.yml` | Quarto project config: output goes to `../examples/`, R chunks use `freeze: auto`, format is GFM. |
@@ -19,12 +19,12 @@ Jekyll ignores any directory whose name starts with `_`, so this folder is *not*
 
 ## Build pipeline
 
-Two steps, decoupled so we don't rerun DDML every time we tweak prose:
+Two steps, decoupled so we don't rerun DML every time we tweak prose:
 
 ```bash
 cd website/_angristevans
 
-# 1. Generate the results artifact. Slow — full pums80m, 12 DDML fits.
+# 1. Generate the results artifact. Slow — full pums80m, 12 DML fits.
 make data           # = Rscript AE_analysis.R; writes results.parquet + results.csv
 
 # 2. Render the Quarto document. Fast — just reads the parquet.
@@ -45,7 +45,7 @@ Quarto's own YAML front matter is consumed by the renderer. To keep the Just-the
 ```{=markdown}
 ---
 layout: default
-title: DDML for the Angrist & Evans
+title: DML for the Angrist & Evans
 parent: Examples
 nav_order: 36
 ...
@@ -61,7 +61,7 @@ The raw block is emitted verbatim. A final `awk` step in the Makefile strips any
 
 - `estimator ∈ {"tsls", "ddml"}`
 - `spec ∈ {"structural", "first_stage"}`
-- `learner` — `"ols"` for 2SLS; `"nnls"` for the DDML short-stack; `"custom_1"..."custom_4"` for the four single learners in the order of `make_learner_specs()`: 1 = Lasso, 2 = Ridge, 3 = XGBoost(lr = .01), 4 = XGBoost(lr = .03).
+- `learner` — `"ols"` for 2SLS; `"nnls"` for the DML short-stack; `"custom_1"..."custom_4"` for the four single learners in the order of `make_learner_specs()`: 1 = Lasso, 2 = Ridge, 3 = XGBoost(lr = .01), 4 = XGBoost(lr = .03).
 - `constraint ∈ {TRUE, FALSE}` — whether the no-interaction restriction was imposed (block-structured polynomial dictionary for lasso/ridge + `interaction_constraints` for XGBoost).
 - `instr ∈ {"observed", "fake"}` — the instrument flavor used for the row. `prepare_data()` populates the *data-frame* column `instr` (the actual $Z$ vector) on each call: `samesex` for `observed` and `agem1 + educm + Uniform(0,1)` for `fake`. The `instr` column in `res` is the flavor *label*, not the $Z$ values.
 - `estimate`, `std.error`, `conf.low`, `conf.high`, `statistic`, `term`, `yvar`.

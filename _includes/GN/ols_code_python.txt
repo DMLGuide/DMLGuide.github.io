@@ -1,0 +1,23 @@
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+# Load data
+gn = pd.read_stata("https://dmlguide.github.io/assets/dta/GN2021.dta")
+
+# Shorten the name of the causal variable of interest to sd_EE
+gn["sd_EE"] = gn["sd_of_gen_mean_temp_anom_EE"]
+
+# Replicate Table 1, column (4): OLS with the 4 controls, HC1 robust SE.
+# Drop the country with missing loggdp (N goes from 75 to 74).
+gn_full = gn.dropna(subset=["loggdp"]).copy()
+controls = ["v104_ee", "settlement_ee", "polhierarchies_ee", "loggdp"]
+
+X_full = sm.add_constant(gn_full[["sd_EE"] + controls], has_constant="add")
+y_full = gn_full["A198new"].astype(float)
+
+model_full        = sm.OLS(y_full, X_full).fit()
+model_full_robust = model_full.get_robustcov_results(cov_type="HC1")
+
+print(model_full_robust.summary())

@@ -1,0 +1,24 @@
+# Figure 5 visualises the bivariate (no-controls) relationship — column (3).
+model_bivariate <- lm(A198new ~ sd_EE, data = gn)
+gn$hat <- fitted(model_bivariate)
+
+p_fig5 <- ggplot(gn, aes(x = sd_EE, y = A198new, label = isocode)) +
+  geom_point(color = "#1f77b4", size = 2) +
+  geom_text(color = "#1f77b4", vjust = -0.6, size = 3) +
+  geom_line(aes(y = hat), linewidth = 1.2, color = "#B1004F") +
+  scale_x_continuous(breaks = c(0, 0.25, 0.5), limits = c(0, 0.5)) +
+  scale_y_continuous(breaks = c(3, 4, 5, 6)) +
+  coord_cartesian(ylim = c(2.8, 6)) +
+  labs(x = "Climatic instability", y = "Importance of tradition") +
+  theme_minimal() +
+  theme(
+    panel.grid      = element_blank(),
+    legend.position = "none",
+    axis.title      = element_text(size = 12),
+    axis.text       = element_text(size = 10)
+  ) +
+  annotate("text", x = 0, y = 2.85,
+           label = "(coef = -1.92, t = -3.68)", hjust = 0, size = 4)
+
+print(p_fig5)
+gn$hat <- NULL

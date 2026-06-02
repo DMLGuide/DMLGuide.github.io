@@ -3,6 +3,7 @@ layout: default
 title: Monopsony III — Further analysis
 parent: Examples
 nav_order: 36
+nav_exclude: true
 math: true
 description: "Varying the nuisance learner, the number of cross-fitting seeds, K, and cluster-vs-IID fold construction."
 permalink: /examples/Monopsony_Robustness
@@ -11,15 +12,15 @@ enable_copy_code_button: true
 
 # Monopsony III — how robust is the headline elasticity?
 
-*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. This final post refines and validates the DDML specification.*
+*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. This final post refines and validates the DML specification.*
 
-In Part 2, we considered a particular DDML specification with $K=3$ cross-fitting folds, randomly split by recruiter, and XGBoost (using 800 trees, a minimum node size of 500, early stopping) as the nuisance learner. This final part illustrates how to refine the DDML specification and highlights sensible validation checks.
+In Part 2, we considered a particular DML specification with $K=3$ cross-fitting folds, randomly split by recruiter, and XGBoost (using 800 trees, a minimum node size of 500, early stopping) as the nuisance learner. This final part illustrates how to refine the DML specification and highlights sensible validation checks.
 
 ## Multi-seed median aggregation (XGBoost)
 
 A single randomization seed generates one random partition of the sample into folds. Asymptotically the exact partition does not matter; in finite samples, however, it can make a noticeable difference.
 
-The table below repeats the random fold splitting and DDML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples.
+The table below repeats the random fold splitting and DML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples.
 
 <div id="tbl-multiseed-xgb">
 
@@ -28,24 +29,24 @@ Table 1: Per-seed estimates and median-aggregated estimates for the baseline sp
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_y2hnvt6wl2tiqyupykk7 = TinyTable.createTableFunctions("tinytable_y2hnvt6wl2tiqyupykk7");
+      const tableFns_txrvxurl1v9katu6xpuv = TinyTable.createTableFunctions("tinytable_txrvxurl1v9katu6xpuv");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '9', j: 2 }, { i: '9', j: 3 }, { i: '9', j: 4 }, { i: '9', j: 5 }, { i: '9', j: 6 }, { i: '9', j: 7 } ], css_id: 'tinytable_css_t29sm0m4g794zg7je8kx',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 }, { i: '2', j: 4 }, { i: '2', j: 5 }, { i: '2', j: 6 }, { i: '2', j: 7 } ], css_id: 'tinytable_css_5xgl6adm8djeusje1dlx',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '6', j: 2 }, { i: '7', j: 2 }, { i: '8', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 }, { i: '6', j: 3 }, { i: '7', j: 3 }, { i: '8', j: 3 }, { i: '1', j: 4 }, { i: '3', j: 4 }, { i: '4', j: 4 }, { i: '5', j: 4 }, { i: '6', j: 4 }, { i: '7', j: 4 }, { i: '8', j: 4 }, { i: '1', j: 5 }, { i: '3', j: 5 }, { i: '4', j: 5 }, { i: '5', j: 5 }, { i: '6', j: 5 }, { i: '7', j: 5 }, { i: '8', j: 5 }, { i: '1', j: 6 }, { i: '3', j: 6 }, { i: '4', j: 6 }, { i: '5', j: 6 }, { i: '6', j: 6 }, { i: '7', j: 6 }, { i: '8', j: 6 }, { i: '1', j: 7 }, { i: '3', j: 7 }, { i: '4', j: 7 }, { i: '5', j: 7 }, { i: '6', j: 7 }, { i: '7', j: 7 }, { i: '8', j: 7 } ], css_id: 'tinytable_css_al4v9ri5xkab1n1kpvfg',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 }, { i: '0', j: 4 }, { i: '0', j: 5 }, { i: '0', j: 6 }, { i: '0', j: 7 } ], css_id: 'tinytable_css_d0g36p59d5a2rkl996ay',}, 
-          { positions: [ { i: '9', j: 1 } ], css_id: 'tinytable_css_9v8pcq6elqrbxz3jymx7',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_62jlrpmpg2kt0kaizsa1',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 }, { i: '6', j: 1 }, { i: '7', j: 1 }, { i: '8', j: 1 } ], css_id: 'tinytable_css_83vyv8mamuc68nlzyqog',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_8jobqwcl5otdnk2tdjzr',}, 
+          { positions: [ { i: '9', j: 2 }, { i: '9', j: 3 }, { i: '9', j: 4 }, { i: '9', j: 5 }, { i: '9', j: 6 }, { i: '9', j: 7 } ], css_id: 'tinytable_css_7tjmp1zixy260te4qv37',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 }, { i: '2', j: 4 }, { i: '2', j: 5 }, { i: '2', j: 6 }, { i: '2', j: 7 } ], css_id: 'tinytable_css_j64q84apalsxeeo3zr03',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '6', j: 2 }, { i: '7', j: 2 }, { i: '8', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 }, { i: '6', j: 3 }, { i: '7', j: 3 }, { i: '8', j: 3 }, { i: '1', j: 4 }, { i: '3', j: 4 }, { i: '4', j: 4 }, { i: '5', j: 4 }, { i: '6', j: 4 }, { i: '7', j: 4 }, { i: '8', j: 4 }, { i: '1', j: 5 }, { i: '3', j: 5 }, { i: '4', j: 5 }, { i: '5', j: 5 }, { i: '6', j: 5 }, { i: '7', j: 5 }, { i: '8', j: 5 }, { i: '1', j: 6 }, { i: '3', j: 6 }, { i: '4', j: 6 }, { i: '5', j: 6 }, { i: '6', j: 6 }, { i: '7', j: 6 }, { i: '8', j: 6 }, { i: '1', j: 7 }, { i: '3', j: 7 }, { i: '4', j: 7 }, { i: '5', j: 7 }, { i: '6', j: 7 }, { i: '7', j: 7 }, { i: '8', j: 7 } ], css_id: 'tinytable_css_sr9ay305ysdtpdsby283',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 }, { i: '0', j: 4 }, { i: '0', j: 5 }, { i: '0', j: 6 }, { i: '0', j: 7 } ], css_id: 'tinytable_css_rt4b0tdqv5eygalsx21w',}, 
+          { positions: [ { i: '9', j: 1 } ], css_id: 'tinytable_css_qibmfy91gfysbxt7yhuv',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_8dgo1zfe51acrm1f3gzw',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 }, { i: '6', j: 1 }, { i: '7', j: 1 }, { i: '8', j: 1 } ], css_id: 'tinytable_css_2fcyiqi722hka704fl3z',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_4t1lin3mvashdx9kmikh',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_y2hnvt6wl2tiqyupykk7.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_txrvxurl1v9katu6xpuv.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -53,17 +54,17 @@ Table 1: Per-seed estimates and median-aggregated estimates for the baseline sp
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_t29sm0m4g794zg7je8kx, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_t29sm0m4g794zg7je8kx {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_5xgl6adm8djeusje1dlx, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_5xgl6adm8djeusje1dlx {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_al4v9ri5xkab1n1kpvfg, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_al4v9ri5xkab1n1kpvfg { text-align: center }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_d0g36p59d5a2rkl996ay, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_d0g36p59d5a2rkl996ay {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_9v8pcq6elqrbxz3jymx7, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_9v8pcq6elqrbxz3jymx7 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_62jlrpmpg2kt0kaizsa1, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_62jlrpmpg2kt0kaizsa1 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_83vyv8mamuc68nlzyqog, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_83vyv8mamuc68nlzyqog { text-align: left }
-    #tinytable_y2hnvt6wl2tiqyupykk7 td.tinytable_css_8jobqwcl5otdnk2tdjzr, #tinytable_y2hnvt6wl2tiqyupykk7 th.tinytable_css_8jobqwcl5otdnk2tdjzr {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_7tjmp1zixy260te4qv37, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_7tjmp1zixy260te4qv37 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_j64q84apalsxeeo3zr03, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_j64q84apalsxeeo3zr03 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_sr9ay305ysdtpdsby283, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_sr9ay305ysdtpdsby283 { text-align: center }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_rt4b0tdqv5eygalsx21w, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_rt4b0tdqv5eygalsx21w {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_qibmfy91gfysbxt7yhuv, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_qibmfy91gfysbxt7yhuv {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_8dgo1zfe51acrm1f3gzw, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_8dgo1zfe51acrm1f3gzw {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_2fcyiqi722hka704fl3z, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_2fcyiqi722hka704fl3z { text-align: left }
+    #tinytable_txrvxurl1v9katu6xpuv td.tinytable_css_4t1lin3mvashdx9kmikh, #tinytable_txrvxurl1v9katu6xpuv th.tinytable_css_4t1lin3mvashdx9kmikh {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_y2hnvt6wl2tiqyupykk7" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_txrvxurl1v9katu6xpuv" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -169,13 +170,13 @@ To avoid unnecessary reliance on a single draw, **we recommend repeating the cro
 $$\hat\theta_0^{\text{median}} = \mathrm{median}\bigl\{\hat\theta_{0,s}\bigr\}_{s=1}^{S},\qquad
 \widehat{\mathrm{s.e.}}^{\text{median}} \;=\; \sqrt{\mathrm{median}\bigl\{\widehat{\mathrm{s.e.}}_s^{\,2} + (\hat\theta_{0,s} - \hat\theta_0^{\text{median}})^2\bigr\}_{s=1}^{S}}.$$
 
-The rationale for reporting an aggregated estimate (shown above in the last column) is that it provides an intuitive summary of DDML estimates that is less susceptible to particular random draws.
+The rationale for reporting an aggregated estimate (shown above in the last column) is that it provides an intuitive summary of DML estimates that is less susceptible to particular random draws.
 
 ### Fold-clustering by recruiter or by observation
 
 In the Ipeirotis data, some recruiters have many postings. The same recruiter’s postings may share unobserved features that correlate with both posted reward and duration until acceptance.
 
-The table below investigates the impact of random fold construction by recruiter versus by observation on the DDML estimate and its standard error:
+The table below investigates the impact of random fold construction by recruiter versus by observation on the DML estimate and its standard error:
 
 <div id="tbl-S2-folds">
 
@@ -184,24 +185,24 @@ Table 2: Table S.2 replica. Recruiter-honest folds with cluster-robust SE vs. 
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_1e62ggzt0t2cwhhvhx39 = TinyTable.createTableFunctions("tinytable_1e62ggzt0t2cwhhvhx39");
+      const tableFns_98dtexcv9wd7ltiis3e6 = TinyTable.createTableFunctions("tinytable_98dtexcv9wd7ltiis3e6");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_wjl6lvkbr3p7fxkwel72',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_i3bgulzi0fhstbyjzdcl',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_lw0z302wuj04msc7nzhu',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_idsdo2yg03l3v7q3uvwr',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_d427b0xy2noyoo8hzqyn',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_gs91vvikmhwtzmn9rg5h',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_f3vjha64up0bau2hn4ry',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_820f3nq44k6vcnvoavax',}, 
+          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_0az13uwp7o4r7aspehta',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_aheh94qwq1dc4j64cusv',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_khyb1untppkjdttu8esj',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_j8t12au19bdbh1zvdrhd',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_d98j5b82745jsydda09w',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_grwe3p1l8nu9gril2hyz',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_ucgjhr2r24stmq889idl',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_0g04mgj7pwvhnzdsavs6',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_1e62ggzt0t2cwhhvhx39.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_98dtexcv9wd7ltiis3e6.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -209,17 +210,17 @@ Table 2: Table S.2 replica. Recruiter-honest folds with cluster-robust SE vs. 
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_wjl6lvkbr3p7fxkwel72, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_wjl6lvkbr3p7fxkwel72 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_i3bgulzi0fhstbyjzdcl, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_i3bgulzi0fhstbyjzdcl {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_lw0z302wuj04msc7nzhu, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_lw0z302wuj04msc7nzhu { text-align: center }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_idsdo2yg03l3v7q3uvwr, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_idsdo2yg03l3v7q3uvwr {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_d427b0xy2noyoo8hzqyn, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_d427b0xy2noyoo8hzqyn {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_gs91vvikmhwtzmn9rg5h, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_gs91vvikmhwtzmn9rg5h {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_f3vjha64up0bau2hn4ry, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_f3vjha64up0bau2hn4ry { text-align: left }
-    #tinytable_1e62ggzt0t2cwhhvhx39 td.tinytable_css_820f3nq44k6vcnvoavax, #tinytable_1e62ggzt0t2cwhhvhx39 th.tinytable_css_820f3nq44k6vcnvoavax {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_0az13uwp7o4r7aspehta, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_0az13uwp7o4r7aspehta {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_aheh94qwq1dc4j64cusv, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_aheh94qwq1dc4j64cusv {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_khyb1untppkjdttu8esj, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_khyb1untppkjdttu8esj { text-align: center }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_j8t12au19bdbh1zvdrhd, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_j8t12au19bdbh1zvdrhd {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_d98j5b82745jsydda09w, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_d98j5b82745jsydda09w {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_grwe3p1l8nu9gril2hyz, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_grwe3p1l8nu9gril2hyz {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_ucgjhr2r24stmq889idl, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_ucgjhr2r24stmq889idl { text-align: left }
+    #tinytable_98dtexcv9wd7ltiis3e6 td.tinytable_css_0g04mgj7pwvhnzdsavs6, #tinytable_98dtexcv9wd7ltiis3e6 th.tinytable_css_0g04mgj7pwvhnzdsavs6 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_1e62ggzt0t2cwhhvhx39" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_98dtexcv9wd7ltiis3e6" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -265,7 +266,7 @@ Table 2: Table S.2 replica. Recruiter-honest folds with cluster-robust SE vs. 
 
 </div>
 
-We find that the cross-fitted $R^2$ values drop noticeably when moving from IID to recruiter folds. The likely reason is that splitting at the observation level lets postings from the same recruiter appear in different folds, making out-of-sample predictions look more precise than they are. This in turn might bias the DDML estimates. To avoid this, **we recommend forming folds that acknowledge the dependence structure of the data**.
+We find that the cross-fitted $R^2$ values drop noticeably when moving from IID to recruiter folds. The likely reason is that splitting at the observation level lets postings from the same recruiter appear in different folds, making out-of-sample predictions look more precise than they are. This in turn might bias the DML estimates. To avoid this, **we recommend forming folds that acknowledge the dependence structure of the data**.
 
 The R package `ddml` allows for automatic fold splitting by cluster using the `cluster_variable` option. The option also ensures standard errors are clustered at the same level:
 
@@ -294,24 +295,24 @@ Table 3: Table S.3 replica. K = 3 vs. K = 5. Both columns are median-of-median
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_obgop859n037s1oo7m67 = TinyTable.createTableFunctions("tinytable_obgop859n037s1oo7m67");
+      const tableFns_fge1weys11aqmo2k8gvn = TinyTable.createTableFunctions("tinytable_fge1weys11aqmo2k8gvn");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_pnfdfmrpq57l9cbiq5nm',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_21ndwbbirktrj7cmo56b',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_86qqjjk1ecgwxgvw1n05',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_xt4jy1p58vdwpwarjhpt',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_7s3txrvtp1f4j6lsxwrn',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_4h5ynewiag7xvkc8jlmf',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_wsfmyaex1f0e98avas51',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_qt9mlxgucpou39jns1kx',}, 
+          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_7abofc40rcxrf0w4ku96',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_sinkr1dboptj5dqkgrsb',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_4ex7scisiz3644jukv1k',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_nmm2v8qe3tmnoojlx3sz',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_uf45q73x64x50zbtywwa',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_nwisscegk61dv5nqyl5o',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_or4kf1c5kdwxraukfvk7',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_m55l3u2rw6gjxjxv7j2g',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_obgop859n037s1oo7m67.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_fge1weys11aqmo2k8gvn.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -319,17 +320,17 @@ Table 3: Table S.3 replica. K = 3 vs. K = 5. Both columns are median-of-median
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_pnfdfmrpq57l9cbiq5nm, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_pnfdfmrpq57l9cbiq5nm {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_21ndwbbirktrj7cmo56b, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_21ndwbbirktrj7cmo56b {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_86qqjjk1ecgwxgvw1n05, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_86qqjjk1ecgwxgvw1n05 { text-align: center }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_xt4jy1p58vdwpwarjhpt, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_xt4jy1p58vdwpwarjhpt {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_7s3txrvtp1f4j6lsxwrn, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_7s3txrvtp1f4j6lsxwrn {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_4h5ynewiag7xvkc8jlmf, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_4h5ynewiag7xvkc8jlmf {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_wsfmyaex1f0e98avas51, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_wsfmyaex1f0e98avas51 { text-align: left }
-    #tinytable_obgop859n037s1oo7m67 td.tinytable_css_qt9mlxgucpou39jns1kx, #tinytable_obgop859n037s1oo7m67 th.tinytable_css_qt9mlxgucpou39jns1kx {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_7abofc40rcxrf0w4ku96, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_7abofc40rcxrf0w4ku96 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_sinkr1dboptj5dqkgrsb, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_sinkr1dboptj5dqkgrsb {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_4ex7scisiz3644jukv1k, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_4ex7scisiz3644jukv1k { text-align: center }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_nmm2v8qe3tmnoojlx3sz, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_nmm2v8qe3tmnoojlx3sz {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_uf45q73x64x50zbtywwa, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_uf45q73x64x50zbtywwa {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_nwisscegk61dv5nqyl5o, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_nwisscegk61dv5nqyl5o {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_or4kf1c5kdwxraukfvk7, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_or4kf1c5kdwxraukfvk7 { text-align: left }
+    #tinytable_fge1weys11aqmo2k8gvn td.tinytable_css_m55l3u2rw6gjxjxv7j2g, #tinytable_fge1weys11aqmo2k8gvn th.tinytable_css_m55l3u2rw6gjxjxv7j2g {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_obgop859n037s1oo7m67" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_fge1weys11aqmo2k8gvn" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -381,7 +382,7 @@ We find the results to be fairly robust to the choice of $K$, with the $K=5$ spe
 
 So far, we have exclusively relied on a particular XGBoost learner for illustration.
 
-The choice of nuisance function estimator is consequential for DDML estimation. Poorly chosen or poorly tuned learners can yield misleading DDML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
+The choice of nuisance function estimator is consequential for DML estimation. Poorly chosen or poorly tuned learners can yield misleading DML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
 
 <div id="tbl-xgb-vs-lasso">
 
@@ -390,24 +391,24 @@ Table 4: XGB 3 vs. CV-Lasso, both median-aggregated over S = 5 seeds. K = 3 re
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_2x5jntabb0sjbv1zwfug = TinyTable.createTableFunctions("tinytable_2x5jntabb0sjbv1zwfug");
+      const tableFns_cdh1owzbsflby6z1asct = TinyTable.createTableFunctions("tinytable_cdh1owzbsflby6z1asct");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_r56epl3mu3f7bwrk9fsp',}, 
-          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_8gabeppeqnji2nore99u',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_xbc77rghckbw36n4wsc3',}, 
-          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_yly7fkycm2ef3b9ylahi',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_xjzruq48krtmc42z0b6t',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_7cu9ifwytyu0vdizoilf',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_rlmzur177ckcfsiskopj',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_jxd4f7wzbytd4gbvbtfi',}, 
+          { positions: [ { i: '6', j: 2 }, { i: '6', j: 3 } ], css_id: 'tinytable_css_rnfg00p5yesb3gylve8d',}, 
+          { positions: [ { i: '2', j: 2 }, { i: '2', j: 3 } ], css_id: 'tinytable_css_knfc6ix8hl28ryymc174',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '1', j: 3 }, { i: '3', j: 3 }, { i: '4', j: 3 }, { i: '5', j: 3 } ], css_id: 'tinytable_css_ed8ceoq6hs37md5cz7b8',}, 
+          { positions: [ { i: '0', j: 2 }, { i: '0', j: 3 } ], css_id: 'tinytable_css_kbilguf5colu4ngn87a5',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_awwqe9cumijwc89lu64v',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_mzi0ilzisjk0qr9w6k07',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_6x8ncht5jk1pqpzdqe2r',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_5hqnyddyz2mgjmbh8m3w',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_2x5jntabb0sjbv1zwfug.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_cdh1owzbsflby6z1asct.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -415,17 +416,17 @@ Table 4: XGB 3 vs. CV-Lasso, both median-aggregated over S = 5 seeds. K = 3 re
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_r56epl3mu3f7bwrk9fsp, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_r56epl3mu3f7bwrk9fsp {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_8gabeppeqnji2nore99u, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_8gabeppeqnji2nore99u {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_xbc77rghckbw36n4wsc3, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_xbc77rghckbw36n4wsc3 { text-align: center }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_yly7fkycm2ef3b9ylahi, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_yly7fkycm2ef3b9ylahi {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_xjzruq48krtmc42z0b6t, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_xjzruq48krtmc42z0b6t {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_7cu9ifwytyu0vdizoilf, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_7cu9ifwytyu0vdizoilf {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_rlmzur177ckcfsiskopj, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_rlmzur177ckcfsiskopj { text-align: left }
-    #tinytable_2x5jntabb0sjbv1zwfug td.tinytable_css_jxd4f7wzbytd4gbvbtfi, #tinytable_2x5jntabb0sjbv1zwfug th.tinytable_css_jxd4f7wzbytd4gbvbtfi {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_rnfg00p5yesb3gylve8d, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_rnfg00p5yesb3gylve8d {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_knfc6ix8hl28ryymc174, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_knfc6ix8hl28ryymc174 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_ed8ceoq6hs37md5cz7b8, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_ed8ceoq6hs37md5cz7b8 { text-align: center }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_kbilguf5colu4ngn87a5, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_kbilguf5colu4ngn87a5 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_awwqe9cumijwc89lu64v, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_awwqe9cumijwc89lu64v {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_mzi0ilzisjk0qr9w6k07, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_mzi0ilzisjk0qr9w6k07 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_6x8ncht5jk1pqpzdqe2r, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_6x8ncht5jk1pqpzdqe2r { text-align: left }
+    #tinytable_cdh1owzbsflby6z1asct td.tinytable_css_5hqnyddyz2mgjmbh8m3w, #tinytable_cdh1owzbsflby6z1asct th.tinytable_css_5hqnyddyz2mgjmbh8m3w {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_2x5jntabb0sjbv1zwfug" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_cdh1owzbsflby6z1asct" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
@@ -483,11 +484,11 @@ In Section 6 of the paper, we discuss **three recommended options for constructi
 
 We focus here on the third approach. For both the outcome and the treatment equation, we form a combination of learners by regressing $Y$ and $D$ on the cross-fitted predicted values of every candidate learner, subject to non-negative weights that sum to one. We refer to this approach as “short-stacking” to distinguish it from an alternative approach that re-estimates the stacking weights for each fold.
 
-Table 6 from the paper reports the stacked DDML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
+Table 6 from the paper reports the stacked DML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
 
 ## What to take away
 
-Before reporting DDML results, it is essential to validate the nuisance function estimators and to question their performance. Other important implementation choices include the number of cross-fitting folds, the fold splitting scheme, and the aggregation method.
+Before reporting DML results, it is essential to validate the nuisance function estimators and to question their performance. Other important implementation choices include the number of cross-fitting folds, the fold splitting scheme, and the aggregation method.
 
 ## References
 
@@ -496,4 +497,3 @@ Before reporting DDML results, it is essential to validate the nuisance function
 - Chernozhukov, V., D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey and J. Robins (2018). [Double/Debiased machine learning for treatment and structural parameters.](https://doi.org/10.1111/ectj.12097)
 - Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).
 - Lei, J. (2020). Cross-validation with confidence. *Journal of the American Statistical Association.*
-- Velez, A. (2024). On the asymptotic properties of debiased machine learning estimators.

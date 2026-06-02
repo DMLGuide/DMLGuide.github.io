@@ -19,7 +19,7 @@ D <- dat$log_reward
 X <- as.matrix(dat[, 5:ncol(dat), drop = FALSE])
 n <- length(y)
 
-# ---- DDML PLM, cluster-honest folds by requester ----------------------------
+# ---- DML PLM, cluster-honest folds by requester ----------------------------
 lasso_spec <- list(
   what = mdl_glmnet,
   args = list(alpha = 1)
@@ -34,7 +34,7 @@ fit <- ddml_plm(
   sample_folds     = nfolds,
   cluster_variable = dat$requester_id
 )
-cat(sprintf("DDML fit time: %.1f s\n", proc.time()[3] - t0))
+cat(sprintf("DML fit time: %.1f s\n", proc.time()[3] - t0))
 
 co      <- summary(fit)$coefficients
 ddml_b  <- unname(co["D1", "Estimate",   1L])
@@ -46,7 +46,7 @@ r2_y  <- 1 - sum((y - hat_y)^2) / sum((y - mean(y))^2)
 r2_d  <- 1 - sum((D - hat_d)^2) / sum((D - mean(D))^2)
 cat(sprintf("Cross-fitted R^2: y = %.3f, d = %.3f\n", r2_y, r2_d))
 
-# Wrap the DDML result so modelsummary can render it alongside the OLS fit.
+# Wrap the DML result so modelsummary can render it alongside the OLS fit.
 ddml_ms <- list(
   tidy = data.frame(
     term      = "log_reward",
@@ -65,7 +65,7 @@ ddml_ms <- list(
 class(ddml_ms) <- "modelsummary_list"
 
 models <- list(
-  "DDML" = ddml_ms
+  "DML" = ddml_ms
 )
 saveRDS(models, out_file)
 cat("Wrote ", out_file, "\n", sep = "")

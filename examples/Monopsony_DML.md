@@ -1,15 +1,16 @@
 ---
 layout: default
-title: Monopsony I — Simple DDML
+title: Monopsony I — Simple DML
 parent: Examples
 nav_order: 34
+nav_exclude: true
 math: true
-description: "DDML applied to examine monopsony power on MTurk."
+description: "DML applied to examine monopsony power on MTurk."
 permalink: /examples/Monopsony_DML
 enable_copy_code_button: true
 ---
 
-# Monopsony I — Using DDML to examine monopsony power.
+# Monopsony I — Using DML to examine monopsony power.
 
 *This is Part 1 of a series of three posts, which revisits the Monopsony application in Section 6 of the JEL paper.*
 
@@ -17,7 +18,7 @@ How much monopsony power does an online platform give to firms? To answer this q
 
 MTurk is a marketplace for short, online tasks called HITs (Human Intelligence Tasks), e.g., labeling images, transcribing audio, filling out surveys. A recruiter posts a HIT, including a description of the task, sets a reward in dollars, and waits for workers to claim and complete it.
 
-We discuss this application in three blog entries that complement Section 6 in the paper: Part 1 (this part) illustrates a simple DDML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings. Part 3 discusses validation exercises.
+We discuss this application in three blog entries that complement Section 6 in the paper: Part 1 (this part) illustrates a simple DML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings. Part 3 discusses validation exercises.
 
 ## 1. Model and identification
 
@@ -55,11 +56,11 @@ We perform minimal data processing: continuous variables are `log(1+x)` transfor
 
 We start with a simple nuisance learner: linear lasso, implemented using the `ddml` package with `mdl_glmnet` and a cross-validated penalty parameter.
 
-We use $K = 3$ cross-fitting folds, constructed at the recruiter level — i.e., all HITs from the same `requester_id` are kept in the same fold. This way we respect the dependence structure of the data and are consistent with the use of cluster-robust standard errors. The figure below sketches the DDML procedure.
+We use $K = 3$ cross-fitting folds, constructed at the recruiter level — i.e., all HITs from the same `requester_id` are kept in the same fold. This way we respect the dependence structure of the data and are consistent with the use of cluster-robust standard errors. The figure below sketches the DML procedure.
 
 <figure style="text-align: center; margin: 1.2em 0;">
   <img src="{{ '/assets/images/monopsony/crossfit_basic.png' | relative_url }}"
-       alt="Standard DDML cross-fit with hand-coded controls only."
+       alt="Standard DML cross-fit with hand-coded controls only."
        style="max-width: 92%; height: auto;">
   <figcaption style="margin-top: 0.6em; color: #555; font-size: 0.85em; line-height: 1.45; text-align: left; max-width: 92%; margin-left: auto; margin-right: auto;">
     <strong>Notes.</strong>
@@ -73,7 +74,7 @@ We use $K = 3$ cross-fitting folds, constructed at the recruiter level — i.e.,
   </figcaption>
 </figure>
 
-We can use the `ddml` package so that we don’t have to implement the DDML algorithm manually. We use the `ddml_plm` command (where `plm` is short-hand for partially linear model).
+We can use the `ddml` package so that we don’t have to implement the DML algorithm manually. We use the `ddml_plm` command (where `plm` is short-hand for partially linear model).
 
 ``` r
 set.seed(42)
@@ -103,24 +104,24 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 &#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
 &#10;    <script>
       // Create table-specific functions using external factory
-      const tableFns_ekl50bv33cajkaz7pfjb = TinyTable.createTableFunctions("tinytable_ekl50bv33cajkaz7pfjb");
+      const tableFns_pyqd5k50s3r646ie140e = TinyTable.createTableFunctions("tinytable_pyqd5k50s3r646ie140e");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_14uca38bv382cy8gdcrn',}, 
-          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_m3new3p6m2uak8u2qwcz',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_688ckx8qc6lfk4ml9ok7',}, 
-          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_vl8n16pokim744uihvna',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_qekncqlbbdfdxz2merls',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_ppjxd4gs34xexo1cs8bb',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_u8o1cr2reknckumyg0xh',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_0wffs0na1zoz6hxtak0v',}, 
+          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_mb4vwgqf1oerzf3a7mn4',}, 
+          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_rz8odn0bo8uwd08tq0az',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_ts48z9b40cvvx6dqkl36',}, 
+          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_207ymljg133pmzj7edku',}, 
+          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_qt6vpqa5an519ll2jncd',}, 
+          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_qxmhvsp33r7uaae0rx6p',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_zbv7j1y81k3u7652oi4p',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_x28kfpobhocfwtsc15ax',}, 
           ];
 &#10;          // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_ekl50bv33cajkaz7pfjb.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_pyqd5k50s3r646ie140e.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -128,21 +129,21 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 &#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_14uca38bv382cy8gdcrn, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_14uca38bv382cy8gdcrn {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_m3new3p6m2uak8u2qwcz, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_m3new3p6m2uak8u2qwcz {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_688ckx8qc6lfk4ml9ok7, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_688ckx8qc6lfk4ml9ok7 { text-align: center }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_vl8n16pokim744uihvna, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_vl8n16pokim744uihvna {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_qekncqlbbdfdxz2merls, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_qekncqlbbdfdxz2merls {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_ppjxd4gs34xexo1cs8bb, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_ppjxd4gs34xexo1cs8bb {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_u8o1cr2reknckumyg0xh, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_u8o1cr2reknckumyg0xh { text-align: left }
-    #tinytable_ekl50bv33cajkaz7pfjb td.tinytable_css_0wffs0na1zoz6hxtak0v, #tinytable_ekl50bv33cajkaz7pfjb th.tinytable_css_0wffs0na1zoz6hxtak0v {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_mb4vwgqf1oerzf3a7mn4, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_mb4vwgqf1oerzf3a7mn4 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_rz8odn0bo8uwd08tq0az, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_rz8odn0bo8uwd08tq0az {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_ts48z9b40cvvx6dqkl36, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_ts48z9b40cvvx6dqkl36 { text-align: center }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_207ymljg133pmzj7edku, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_207ymljg133pmzj7edku {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_qt6vpqa5an519ll2jncd, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_qt6vpqa5an519ll2jncd {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_qxmhvsp33r7uaae0rx6p, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_qxmhvsp33r7uaae0rx6p {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_zbv7j1y81k3u7652oi4p, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_zbv7j1y81k3u7652oi4p { text-align: left }
+    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_x28kfpobhocfwtsc15ax, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_x28kfpobhocfwtsc15ax {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_ekl50bv33cajkaz7pfjb" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
+      <table class="tinytable" id="tinytable_pyqd5k50s3r646ie140e" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
         &#10;        <thead>
               <tr>
                 <th scope="col" data-row="0" data-col="1"> </th>
-                <th scope="col" data-row="0" data-col="2">DDML</th>
+                <th scope="col" data-row="0" data-col="2">DML</th>
               </tr>
         </thead>
         &#10;        <tbody>
@@ -177,13 +178,13 @@ Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in paren
 
 </div>
 
-Our first DDML estimate is $0.024$ (with a standard error of $0.523$), indicating that $\theta_0$ is very imprecisely estimated. The cross-fitted $R^2$ values tell us how predictable the outcome and the treatment are using the hand-coded controls. With CV-lasso on the hand-coded block alone, $R^2(Y \mid X)$ sits in the high-60s and $R^2(D \mid X)$ at around 74%.
+Our first DML estimate is $0.024$ (with a standard error of $0.523$), indicating that $\theta_0$ is very imprecisely estimated. The cross-fitted $R^2$ values tell us how predictable the outcome and the treatment are using the hand-coded controls. With CV-lasso on the hand-coded block alone, $R^2(Y \mid X)$ sits in the high-60s and $R^2(D \mid X)$ at around 74%.
 
 ## 5. Next steps
 
 We shouldn’t take this estimate very seriously: First, we haven’t validated the use of lasso against other nuisance function estimators. Second, the hand-coded variables might still miss out on important patterns in the data that are not captured through ad-hoc manual coding.
 
-For these reasons, in the <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">next post</a> we will leverage fine-tuned DeBERTa embeddings to better approximate task types. The third post will refine the DDML model and perform validation checks.
+For these reasons, in the <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">next post</a> we will leverage fine-tuned DeBERTa embeddings to better approximate task types. The third post will refine the DML model and perform validation checks.
 
 ## 6. References
 
@@ -193,4 +194,4 @@ For these reasons, in the <a href="{{ '/examples/Monopsony_Finetune' | relative_
 - Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).
 - Ipeirotis, P. G. (2010). [Analyzing the Amazon Mechanical Turk marketplace.](https://archive.nyu.edu/handle/2451/29801)
 
-Continue: <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}"><strong>Monopsony II — fine-tuned text embeddings</strong></a> · <a href="{{ '/examples/Monopsony_Robustness' | relative_url }}"><strong>Monopsony III — robustness</strong></a>.
+Continue: <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}"><strong>Monopsony II</strong></a> · <a href="{{ '/examples/Monopsony_Robustness' | relative_url }}"><strong>Monopsony III</strong></a>.

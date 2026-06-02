@@ -1,0 +1,84 @@
+# Outputs produced by GN_ddml.py (K = 10 folds).
+# `# @snippet:NAME ... # @end` blocks are imported by examples/GN.md via
+# _includes/GN/ — keep these in sync with the .py script when re-running.
+
+
+# @snippet:ols_out
+                            OLS Regression Results
+==============================================================================
+Dep. Variable:                A198new   R-squared:                       0.388
+Model:                            OLS   Adj. R-squared:                  0.343
+Method:                 Least Squares   F-statistic:                     7.626
+Date:                Tue, 02 Jun 2026   Prob (F-statistic):           9.77e-06
+Time:                        22:49:21   Log-Likelihood:                -42.536
+No. Observations:                  74   AIC:                             97.07
+Df Residuals:                      68   BIC:                             110.9
+Df Model:                           5
+Covariance Type:                  HC1
+=====================================================================================
+                        coef    std err          t      P>|t|      [0.025      0.975]
+-------------------------------------------------------------------------------------
+const                 6.5761      0.536     12.270      0.000       5.507       7.646
+sd_EE                -1.8235      0.696     -2.621      0.011      -3.212      -0.435
+v104_ee               0.0054      0.005      1.009      0.317      -0.005       0.016
+settlement_ee        -0.0651      0.035     -1.873      0.065      -0.134       0.004
+polhierarchies_ee     0.0128      0.097      0.132      0.896      -0.181       0.207
+loggdp               -0.1649      0.049     -3.390      0.001      -0.262      -0.068
+==============================================================================
+Omnibus:                        3.680   Durbin-Watson:                   1.959
+Prob(Omnibus):                  0.159   Jarque-Bera (JB):                3.823
+Skew:                          -0.118   Prob(JB):                        0.148
+Kurtosis:                       4.088   Cond. No.                         480.
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity robust (HC1)
+# @end
+
+
+# @snippet:dml_out
+theta = -2.3267  (SE 0.7718)
+# @end
+
+
+# @snippet:ssw_out
+Short-stack NNLS weights (Y eq):  OLS=0.000, Lasso=0.525, RF=0.475
+Short-stack NNLS weights (D eq):  OLS=0.000, Lasso=0.335, RF=0.665
+# @end
+
+
+# @snippet:rbl_est_out
+DML estimates by learner (resid_Y ~ resid_D, HC1 robust SE):
+ spec         b     se_d  intercept   se_int
+  OLS -1.851188 0.684268  -0.005177 0.054723
+Lasso -1.871904 0.689664  -0.004357 0.053601
+   RF -2.353444 0.740676  -0.003409 0.052612
+   SS -2.326678 0.771804  -0.004310 0.051630
+# @end
+
+
+# @snippet:final_out
+Mean/median aggregated short-stack results:
+             spec         b       se
+  shortstack mean -2.174145 0.771204
+shortstack median -2.180015 0.766703
+# @end
+
+
+# @snippet:fsw_out
+short-stack NNLS weights across resamples for A198new (11 reps)
+       mean_weight  rep_1  rep_2  rep_3  rep_4  rep_5  rep_6  rep_7  rep_8  rep_9  rep_10  rep_11
+OLS         0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000  0.0000  0.0000
+Lasso       0.4637 0.5669 0.3860 0.2935 0.3451 0.4739 0.6330 0.4728 0.5867 0.3705  0.3524  0.6203
+RF          0.5363 0.4331 0.6140 0.7065 0.6549 0.5261 0.3670 0.5272 0.4133 0.6295  0.6476  0.3797
+
+short-stack NNLS weights across resamples for sd_EE (11 reps)
+       mean_weight  rep_1  rep_2  rep_3  rep_4  rep_5  rep_6  rep_7  rep_8  rep_9  rep_10  rep_11
+OLS         0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000  0.0000  0.0000
+Lasso       0.3369 0.3817 0.3668 0.4787 0.3582 0.3828 0.3059 0.2707 0.1738 0.2787  0.4149  0.2942
+RF          0.6631 0.6183 0.6332 0.5213 0.6418 0.6172 0.6941 0.7293 0.8262 0.7213  0.5851  0.7058
+# @end
+
+
+========================================
+GN replication complete!

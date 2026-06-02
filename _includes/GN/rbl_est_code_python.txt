@@ -1,0 +1,16 @@
+Yhat["SS"] = Yhat_mat @ w_Y
+Dhat["SS"] = Dhat_mat @ w_D
+
+resY_dict = {k: Y - Yhat[k] for k in Yhat}
+resD_dict = {k: D - Dhat[k] for k in Dhat}
+
+rows = []
+for key in ["OLS", "Lasso", "RF", "SS"]:
+    Xc  = sm.add_constant(resD_dict[key])
+    f_k = sm.OLS(resY_dict[key], Xc).fit().get_robustcov_results(cov_type="HC1")
+    rows.append({"spec": key,
+                 "b": f_k.params[1], "se_d": f_k.bse[1],
+                 "intercept": f_k.params[0], "se_int": f_k.bse[0]})
+
+tbl = pd.DataFrame(rows)
+print(tbl.to_string(index=False))

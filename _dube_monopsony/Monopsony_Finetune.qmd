@@ -8,11 +8,12 @@ format:
 ```{=markdown}
 ---
 layout: default
-title: Monopsony II — DDML with fine-tuned embeddings
+title: Monopsony II — DML with fine-tuned embeddings
 parent: Examples
 nav_order: 35
+nav_exclude: true
 math: true
-description: "Adding fine-tuned DeBERTa embeddings of the HIT text to the DDML control set."
+description: "Adding fine-tuned DeBERTa embeddings of the HIT text to the DML control set."
 permalink: /examples/Monopsony_Finetune
 enable_copy_code_button: true
 ---
@@ -26,11 +27,11 @@ library(modelsummary)
 models2 <- readRDS("results_entry2.rds")
 
 models <- list(
-  "Hand-coded + fine-tuned DeBERTa embeds" = models2[["DDML"]]
+  "Hand-coded + fine-tuned DeBERTa embeds" = models2[["DML"]]
 )
 ```
 
-# Monopsony II — fine-tuned text embeddings as DDML controls
+# Monopsony II — fine-tuned text embeddings as DML controls
 
 *Part 2 of a three-post series. Part 1 estimated the partially linear coefficient with hand-coded controls only. This post appends the fine-tuned DeBERTa embedding of each HIT's title and description.*
 
@@ -43,7 +44,7 @@ $$
 
 Only $X_i$ changes. We augment the hand-engineered controls with embeddings, retrieved from a DeBERTa-v3 language model that we fine-tune to our setting. 
 
-In this part, we discuss two things: First, we explain what embeddings are, how fine-tuning works, and we describe our specific implementation choices. Second, we explain how the fine-tuning process is integrated into the DDML framework.
+In this part, we discuss two things: First, we explain what embeddings are, how fine-tuning works, and we describe our specific implementation choices. Second, we explain how the fine-tuning process is integrated into the DML framework.
 
 ## Embeddings and fine-tuning
 
@@ -73,9 +74,9 @@ As a consequence, the LoRA fine-tuning process is much faster, while often yield
 
 A few implementation details: The text input is the concatenation of HIT title and description, tokenized by DeBERTa's own SentencePiece tokenizer and truncated to 160 tokens. We train with the AdamW optimizer at learning rate $2 \times 10^{-4}$ (LoRA needs a higher LR than full fine-tuning because only the low-rank factors move), batch size 32, for three epochs. 
 
-## Integrating fine-tuning into DDML
+## Integrating fine-tuning into DML
 
-How do we integrate fine-tuning into the DDML algorithm? A naive approach might proceed as follows: using the full sample, fine-tune DeBERTa separately on log reward and log duration, retrieve the fine-tuned embeddings, and use these as inputs along with hand-coded controls in the cross-fitting process. 
+How do we integrate fine-tuning into the DML algorithm? A naive approach might proceed as follows: using the full sample, fine-tune DeBERTa separately on log reward and log duration, retrieve the fine-tuned embeddings, and use these as inputs along with hand-coded controls in the cross-fitting process. 
 
 This approach, however, would produce predicted values that are not purely out-of-sample: we would violate the requirement that each data point not be used for both nuisance function estimation (which includes embedding estimation) and structural estimation.
 
@@ -169,7 +170,7 @@ modelsummary(
 )
 ```
 
-With the fine-tuned embeddings in $X$, the cross-fitted $R^2$ values are above 75% and 85%, and the cluster-robust standard error on $\hat\theta_0$ is tight enough for the point estimate to be unambiguously different from zero. $\hat\theta_0 \approx -0.066$ is in the same neighborhood as the estimate in column 9 of Table 5 (panel B) in the DDML paper. 
+With the fine-tuned embeddings in $X$, the cross-fitted $R^2$ values are above 75% and 85%, and the cluster-robust standard error on $\hat\theta_0$ is tight enough for the point estimate to be unambiguously different from zero. $\hat\theta_0 \approx -0.066$ is in the same neighborhood as the estimate in column 9 of Table 5 (panel B) in the DML paper. 
 
 The two numbers do not coincide exactly: here we use an adapted code base and a single cross-fitting seed, and column 9 of the paper is a *median-aggregated* estimate over $S = 5$ seeds.
 

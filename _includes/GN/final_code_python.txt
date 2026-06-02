@@ -1,0 +1,72 @@
+# "Final" results: 11 cross-fit splits with sum-to-one NNLS short-stacking
+# (OLS + CV-Lasso + RF) inside each split, then median aggregation
+# following Chernozhukov et al. (2018):
+#   se_med = sqrt( median( se^2 + (theta - theta_med)^2 ) )
+
+# Reload data for a fresh start.
+gn = pd.read_stata("https://dmlguide.github.io/assets/dta/GN2021.dta")
+gn["sd_EE"] = gn["sd_of_gen_mean_temp_anom_EE"]
+gn = gn.dropna(subset=["loggdp"]).copy().reset_index(drop=True)
+
+Y = gn[Y_var].astype(float).to_numpy()
+D = gn[D_var].astype(float).to_numpy()
+X = gn[X_vars].astype(float).to_numpy()
+
+np.random.seed(42)
+R = 11
+
+
+def make_learners(seed):
+    return {
+        "OLS":   LinearRegression(),
+        "Lasso": LassoCV(cv=5, random_state=seed, max_iter=10000),
+        "RF":    RandomForestRegressor(random_state=seed),
+    }
+
+
+def cv_predict_full(estimator, target, kf):
+    preds = np.empty_like(target, dtype=float)
+    for tr, te in kf.split(X):
+        est_clone = type(estimator)(**estimator.get_params())
+        est_clone.fit(X[tr], target[tr])
+        preds[te] = est_clone.predict(X[te])
+    return preds
+
+
+coef_vec = np.empty(R)
+se_vec   = np.empty(R)
+wY_all   = np.zeros((3, R))
+wD_all   = np.zeros((3, R))
+
+for r in range(R):
+    seed_r = np.random.randint(0, 2**31 - 1)
+    kf_r = KFold(n_splits=10, shuffle=True, random_state=seed_r)
+    lrn  = make_learners(seed_r)
+
+    Yhat_r = {k: cv_predict_full(est, Y, kf_r) for k, est in lrn.items()}
+    Dhat_r = {k: cv_predict_full(est, D, kf_r) for k, est in lrn.items()}
+
+    Yhat_mat = np.column_stack([Yhat_r["OLS"], Yhat_r["Lasso"], Yhat_r["RF"]])
+    Dhat_mat = np.column_stack([Dhat_r["OLS"], Dhat_r["Lasso"], Dhat_r["RF"]])
+    w_Y = stack_nnls1(Yhat_mat, Y)
+    w_D = stack_nnls1(Dhat_mat, D)
+
+    resY = Y - Yhat_mat @ w_Y
+    resD = D - Dhat_mat @ w_D
+    fit_r = sm.OLS(resY, sm.add_constant(resD)).fit().get_robustcov_results(cov_type="HC1")
+
+    coef_vec[r] = fit_r.params[1]
+    se_vec[r]   = fit_r.bse[1]
+    wY_all[:, r] = w_Y
+    wD_all[:, r] = w_D
+
+# Chernozhukov median aggregation
+theta_med = float(np.median(coef_vec))
+se_med    = float(np.sqrt(np.median(se_vec**2 + (coef_vec - theta_med)**2)))
+theta_mean, se_mean = float(np.mean(coef_vec)), float(np.mean(se_vec))
+
+agg = pd.DataFrame({"spec": ["shortstack mean", "shortstack median"],
+                    "b":    [theta_mean, theta_med],
+                    "se":   [se_mean,    se_med]})
+print("\nMean/median aggregated short-stack results:")
+print(agg.to_string(index=False))

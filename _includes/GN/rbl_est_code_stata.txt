@@ -1,0 +1,36 @@
+// ddml creates conditional expectations for each learner.
+// With pystacked, the learners are numbered.
+// The final "_1" identifies the resample (the single cross-fit split).
+// Globals used by the residual-construction lines below.
+global Y A198new
+global D sd_EE
+
+// Create residualized Y and D for each learner.
+cap drop Y_L1_r Y_L2_r Y_L3_r Y_ss_r D_L1_r D_L2_r D_L3_r D_ss_r
+gen Y_L1_r = $Y-Y1_pystacked_L1_1
+gen Y_L2_r = $Y-Y1_pystacked_L2_1
+gen Y_L3_r = $Y-Y1_pystacked_L3_1
+gen Y_ss_r = $Y-Y_A198new_ss_1
+gen D_L1_r = $D-D1_pystacked_L1_1
+gen D_L2_r = $D-D1_pystacked_L2_1
+gen D_L3_r = $D-D1_pystacked_L3_1
+gen D_ss_r = $D-D_sd_EE_ss_1
+
+// Per-learner residual regressions; store for the comparison table.
+qui reg Y_L1_r D_L1_r, robust
+est store ddml_L1_L1, title("OLS learners")
+qui reg Y_L2_r D_L2_r, robust
+est store ddml_L2_L2, title("Lasso learners")
+qui reg Y_L3_r D_L3_r, robust
+est store ddml_L3_L3, title("RF learners")
+qui reg Y_ss_r D_ss_r, robust
+est store ddml_SS_SS, title("SS learners")
+
+// Compare DML estimations for learner combinations:
+// nb: Code uses estout by Ben Jann; install from SSC Archives.
+set linesize 200
+estout ddml_L1_L1 ddml_L2_L2 ddml_L3_L3 ddml_SS_SS,					///
+	label modelwidth(15) collabels(none)							///
+	rename (D_L1_r D_r D_L2_r D_r D_L3_r D_r D_ss_r D_r)			///
+	cells(b(fmt(3)) se(par fmt(3)))									///
+	varlabels(_cons Constant)

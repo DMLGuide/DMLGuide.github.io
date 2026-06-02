@@ -1,21 +1,22 @@
 ---
 layout: default
-title: DDML for the Angrist & Evans
+title: DML for the Angrist & Evans
 parent: Examples
 nav_order: 40
+nav_exclude: true
 math: true
 description: "Imposing no-interaction restrictions in DML estimations."
 permalink: /examples/AngristEvans
 enable_copy_code_button: true
 ---
 
-# Machine Labor — DDML for the Angrist & Evans IV
+# Machine Labor — DML for the Angrist & Evans IV
 
 The classical study of [Angrist & Evans (1998)](https://doi.org/10.1257/aer.88.3.450) estimates the effect of a third child on maternal labor supply using the instrument `samesex`, an indicator for the first two children sharing a sex. The rationale is that parents whose first two children share a sex are modestly more likely to have a third child, but — conditional on the sex of each of the first two children — `samesex` is plausibly unrelated to the mother’s labor-market outcomes.
 
 [Angrist & Frandsen (2022)](https://doi.org/10.1086/717933) revisit this application in *Machine Labor* and ask whether machine learning can be used inside the first stage of two-stage least squares. They show that it can go badly: with random forests, the second-stage effect of a third child becomes imprecisely estimated, and a placebo check using a signal-free fake instrument yields spurious results.
 
-This post shows that the failure of ML generated instruments is not fundamental. With nuisance estimators that respect the identifying restrictions of the design, DDML reproduces the 2SLS point estimate on the real instrument and correctly refuses to find signal using placebo instruments.
+This post shows that the failure of ML generated instruments is not fundamental. With nuisance estimators that respect the identifying restrictions of the design, DML reproduces the 2SLS point estimate on the real instrument and correctly refuses to find signal using placebo instruments.
 
 ## The identification issue
 
@@ -34,7 +35,7 @@ The outcome ($Y$ = `workedm`) is an indicator for whether the mother is working.
 | `blackm`, `hispm`, `othracem` | Race indicators                   |
 | `educm`                       | Years of education                |
 
-DDML estimates $\theta$ from a residualized score: it instruments the residualized treatment $\tilde D = D - \hat m(X)$ with the residualized instrument $\tilde Z = Z - \hat r(X)$ in a regression on $\tilde Y = Y - \hat g(X)$. The nuisance functions $\hat g$, $\hat m$, and $\hat r$ are estimated by machine learning on held-out folds.
+DML estimates $\theta$ from a residualized score: it instruments the residualized treatment $\tilde D = D - \hat m(X)$ with the residualized instrument $\tilde Z = Z - \hat r(X)$ in a regression on $\tilde Y = Y - \hat g(X)$. The nuisance functions $\hat g$, $\hat m$, and $\hat r$ are estimated by machine learning on held-out folds.
 
 The problem sits in $\hat r(X)$. By construction,
 
@@ -139,7 +140,7 @@ specs_stack <- list(
 
 The `assign_X` field tells `ddml` which columns of `X_full` each learner sees: XGBoost gets the eight original variables, while lasso and ridge work on the (additivity-respecting) polynomial dictionary.
 
-## DDML estimation
+## DML estimation
 
 We call `ddml::ddml_pliv()` with the four-learner stack, short-stacking via non-negative least squares, two folds, and heteroskedasticity-robust standard errors.
 
@@ -173,9 +174,9 @@ fit_ddml <- ddml_pliv(
 
 We estimate the model twice: once with the observed `samesex` instrument, and once with a placebo $Z=$ `agem1 + educm + Uniform(0,1)`, following Angrist & Frandsen. After residualizing on $X$, the placebo is just noise, so any apparent first-stage signal there is spurious by construction.
 
-### Real IV (`samesex`) — DDML reproduces 2SLS
+### Real IV (`samesex`) — DML reproduces 2SLS
 
-With the observed instrument, all constrained DDML variants — stacking, lasso, ridge, XGBoost — land essentially on the 2SLS point estimate. Unconstrained XGBoost (the last two rows of the table) drifts off and standard errors inflate.
+With the observed instrument, all constrained DML variants — stacking, lasso, ridge, XGBoost — land essentially on the 2SLS point estimate. Unconstrained XGBoost (the last two rows of the table) drifts off and standard errors inflate.
 
 | Learner | Structural / constrained | First stage / constrained | Structural / unconstrained | First stage / unconstrained |
 |:---|:---|:---|:---|:---|
@@ -189,9 +190,9 @@ With the observed instrument, all constrained DDML variants — stacking, lasso,
 *Notes.* Outcome: `workedm` (mother works). Instrument: observed (`samesex`). Each cell shows the coefficient with its standard error in parentheses; columns split each estimate by stage (structural vs. first-stage) and by whether the no-interaction constraint between `boy1st` and `boy2nd` is imposed. The 2SLS row does not depend on the constraint and is reported once per stage.
 {: .fs-2 }
 
-### Pure-noise IV (`fake`) — DDML refuses to find signal
+### Pure-noise IV (`fake`) — DML refuses to find signal
 
-When $Z=$ `agem1 + educm + noise`, the true first-stage coefficient is zero. DDML behaves the way it should on a noise instrument: the first-stage DDML estimates (with or without constraint enforced) are clustering around zero. The standard errors of the structural estimates are inflated, with confidence intervals easily covering zero. The constrained-vs-unconstrained distinction has essentially no effect here.
+When $Z=$ `agem1 + educm + noise`, the true first-stage coefficient is zero. DML behaves the way it should on a noise instrument: the first-stage DML estimates (with or without constraint enforced) are clustering around zero. The standard errors of the structural estimates are inflated, with confidence intervals easily covering zero. The constrained-vs-unconstrained distinction has essentially no effect here.
 
 | Learner | Structural / constrained | First stage / constrained | Structural / unconstrained | First stage / unconstrained |
 |:---|:---|:---|:---|:---|
@@ -207,7 +208,7 @@ When $Z=$ `agem1 + educm + noise`, the true first-stage coefficient is zero. DDM
 
 ## Takeaway
 
-In the Angrist & Evans application, identification rests on a functional-form restriction that 2SLS imposes implicitly. Replacing the linear first stage with a flexible learner leaves it unenforced. This post shows two ways to re-impose it without losing flexibility: regularized regression on a custom polynomial dictionary, and XGBoost with interaction constraints. With first-stage learners that respect the restriction, DDML reproduces the 2SLS estimate on the observed instrument and returns a first stage indistinguishable from zero on the placebo.
+In the Angrist & Evans application, identification rests on a functional-form restriction that 2SLS imposes implicitly. Replacing the linear first stage with a flexible learner leaves it unenforced. This post shows two ways to re-impose it without losing flexibility: regularized regression on a custom polynomial dictionary, and XGBoost with interaction constraints. With first-stage learners that respect the restriction, DML reproduces the 2SLS estimate on the observed instrument and returns a first stage indistinguishable from zero on the placebo.
 
 ## References
 

@@ -1,0 +1,13 @@
+short-stacked weights across resamples for A198new
+final stacking estimator: nnls1
+             learner  mean_weight        rep_1
+    ols            1            0            0
+lassocv            2    .30571302    .30571302
+     rf            3    .69428698    .69428698
+
+short-stacked weights across resamples for sd_EE
+final stacking estimator: nnls1
+             learner  mean_weight        rep_1
+    ols            1    2.901e-18    2.901e-18
+lassocv            2    .36439938    .36439938
+     rf            3    .63560062    .63560062

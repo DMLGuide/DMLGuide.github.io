@@ -1,0 +1,29 @@
+                            OLS Regression Results
+==============================================================================
+Dep. Variable:                A198new   R-squared:                       0.388
+Model:                            OLS   Adj. R-squared:                  0.343
+Method:                 Least Squares   F-statistic:                     7.626
+Date:                Tue, 02 Jun 2026   Prob (F-statistic):           9.77e-06
+Time:                        22:49:21   Log-Likelihood:                -42.536
+No. Observations:                  74   AIC:                             97.07
+Df Residuals:                      68   BIC:                             110.9
+Df Model:                           5
+Covariance Type:                  HC1
+=====================================================================================
+                        coef    std err          t      P>|t|      [0.025      0.975]
+-------------------------------------------------------------------------------------
+const                 6.5761      0.536     12.270      0.000       5.507       7.646
+sd_EE                -1.8235      0.696     -2.621      0.011      -3.212      -0.435
+v104_ee               0.0054      0.005      1.009      0.317      -0.005       0.016
+settlement_ee        -0.0651      0.035     -1.873      0.065      -0.134       0.004
+polhierarchies_ee     0.0128      0.097      0.132      0.896      -0.181       0.207
+loggdp               -0.1649      0.049     -3.390      0.001      -0.262      -0.068
+==============================================================================
+Omnibus:                        3.680   Durbin-Watson:                   1.959
+Prob(Omnibus):                  0.159   Jarque-Bera (JB):                3.823
+Skew:                          -0.118   Prob(JB):                        0.148
+Kurtosis:                       4.088   Cond. No.                         480.
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity robust (HC1)

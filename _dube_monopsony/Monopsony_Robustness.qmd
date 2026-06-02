@@ -11,6 +11,7 @@ layout: default
 title: Monopsony III — Further analysis
 parent: Examples
 nav_order: 36
+nav_exclude: true
 math: true
 description: "Varying the nuisance learner, the number of cross-fitting seeds, K, and cluster-vs-IID fold construction."
 permalink: /examples/Monopsony_Robustness
@@ -265,15 +266,15 @@ export_dml_table <- function(fits, output = NULL, ...) {
 
 # Monopsony III — how robust is the headline elasticity?
 
-*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DDML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. This final post refines and validates the DDML specification.*
+*Part 3 of a three-post series. <a href="{{ '/examples/Monopsony_DML' | relative_url }}">Part 1</a> ran DML on the Dube et al. (2020) MTurk data with hand-coded controls only. <a href="{{ '/examples/Monopsony_Finetune' | relative_url }}">Part 2</a> added fine-tuned DeBERTa embeddings. This final post refines and validates the DML specification.*
 
-In Part 2, we considered a particular DDML specification with $K=3$ cross-fitting folds, randomly split by recruiter, and XGBoost (using 800 trees, a minimum node size of 500, early stopping) as the nuisance learner. This final part illustrates how to refine the DDML specification and highlights sensible validation checks.
+In Part 2, we considered a particular DML specification with $K=3$ cross-fitting folds, randomly split by recruiter, and XGBoost (using 800 trees, a minimum node size of 500, early stopping) as the nuisance learner. This final part illustrates how to refine the DML specification and highlights sensible validation checks.
 
 ## Multi-seed median aggregation (XGBoost)
 
 A single randomization seed generates one random partition of the sample into folds. Asymptotically the exact partition does not matter; in finite samples, however, it can make a noticeable difference.
 
-The table below repeats the random fold splitting and DDML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples. 
+The table below repeats the random fold splitting and DML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples. 
 
 ```{r tbl-multiseed-xgb}
 #| echo: false
@@ -296,13 +297,13 @@ $$
 \widehat{\mathrm{s.e.}}^{\text{median}} \;=\; \sqrt{\mathrm{median}\bigl\{\widehat{\mathrm{s.e.}}_s^{\,2} + (\hat\theta_{0,s} - \hat\theta_0^{\text{median}})^2\bigr\}_{s=1}^{S}}.
 $$
 
-The rationale for reporting an aggregated estimate (shown above in the last column) is that it provides an intuitive summary of DDML estimates that is less susceptible to particular random draws.
+The rationale for reporting an aggregated estimate (shown above in the last column) is that it provides an intuitive summary of DML estimates that is less susceptible to particular random draws.
 
 ### Fold-clustering by recruiter or by observation
 
 In the Ipeirotis data, some recruiters have many postings. The same recruiter's postings may share unobserved features that correlate with both posted reward and duration until acceptance.
 
-The table below investigates the impact of random fold construction by recruiter versus by observation on the DDML estimate and its standard error:
+The table below investigates the impact of random fold construction by recruiter versus by observation on the DML estimate and its standard error:
 
 ```{r tbl-S2-folds}
 #| echo: false
@@ -321,7 +322,7 @@ export_dml_table(
 )
 ```
 
-We find that the cross-fitted $R^2$ values drop noticeably when moving from IID to recruiter folds. The likely reason is that splitting at the observation level lets postings from the same recruiter appear in different folds, making out-of-sample predictions look more precise than they are. This in turn might bias the DDML estimates. To avoid this, **we recommend forming folds that acknowledge the dependence structure of the data**.
+We find that the cross-fitted $R^2$ values drop noticeably when moving from IID to recruiter folds. The likely reason is that splitting at the observation level lets postings from the same recruiter appear in different folds, making out-of-sample predictions look more precise than they are. This in turn might bias the DML estimates. To avoid this, **we recommend forming folds that acknowledge the dependence structure of the data**.
 
 The R package `ddml` allows for automatic fold splitting by cluster using the `cluster_variable` option. The option also ensures standard errors are clustered at the same level:
 
@@ -366,7 +367,7 @@ We find the results to be fairly robust to the choice of $K$, with the $K=5$ spe
 
 So far, we have exclusively relied on a particular XGBoost learner for illustration. 
 
-The choice of nuisance function estimator is consequential for DDML estimation. Poorly chosen or poorly tuned learners can yield misleading DDML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
+The choice of nuisance function estimator is consequential for DML estimation. Poorly chosen or poorly tuned learners can yield misleading DML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
 
 ```{r tbl-xgb-vs-lasso}
 #| echo: false
@@ -397,11 +398,11 @@ In Section 6 of the paper, we discuss **three recommended options for constructi
 
 We focus here on the third approach. For both the outcome and the treatment equation, we form a combination of learners by regressing $Y$ and $D$ on the cross-fitted predicted values of every candidate learner, subject to non-negative weights that sum to one. We refer to this approach as "short-stacking" to distinguish it from an alternative approach that re-estimates the stacking weights for each fold. 
 
-Table 6 from the paper reports the stacked DDML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
+Table 6 from the paper reports the stacked DML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
 
 ## What to take away
 
-Before reporting DDML results, it is essential to validate the nuisance function estimators and to question their performance. Other important implementation choices include the number of cross-fitting folds, the fold splitting scheme, and the aggregation method.
+Before reporting DML results, it is essential to validate the nuisance function estimators and to question their performance. Other important implementation choices include the number of cross-fitting folds, the fold splitting scheme, and the aggregation method.
 
 ## References
 

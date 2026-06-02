@@ -1,4 +1,4 @@
-# Two-step build for the Angrist-Evans DDML post.
+# Two-step build for the Angrist-Evans DML post.
 #
 #   make data    -> runs AE_analysis.R once, writes results.parquet + results.csv
 #   make render  -> renders AngristEvans.qmd to ../examples/AngristEvans.md

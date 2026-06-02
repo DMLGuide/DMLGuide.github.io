@@ -1,0 +1,11 @@
+// Figure 5 visualises the bivariate (no-controls) relationship — column (3).
+reg A198new sd_EE, robust
+predict hat
+twoway (scatter A198new sd_EE, msymbol(circle) msize(medium)) ///
+       (line hat sd_EE, sort lwidth(medium)), ///
+       xlabel(0(0.25)0.5) ylabel(3(1)6) ///
+       xtitle("Climatic instability") ytitle("Importance of tradition") ///
+       legend(off) ///
+       text(2.85 0 "(coef = -1.92, t = -3.68)", placement(east))
+
+drop hat

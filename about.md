@@ -10,9 +10,9 @@ permalink: /about
 # About
 
 [Achim Ahrens](https://achimahrens.de/), 
-*ETH Zurich*
+*CERGE-EI*
 
-[Victor Chernozhukov](https://www.victorchernozhukov.com/]), 
+[Victor Chernozhukov](https://www.victorchernozhukov.com/), 
 *Massachusetts Institute of Technology*
 
 [Christian Hansen](https://www.chicagobooth.edu/faculty/directory/h/christian-b-hansen), 

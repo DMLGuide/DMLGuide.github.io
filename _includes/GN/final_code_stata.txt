@@ -1,0 +1,31 @@
+// "Final" results using ddml (multiple resamples, median aggregation)
+// 1. Set seed for replicability.
+// 2. Use 11 separate cross-fit splits (reps = 11).
+// 3. Use 10-fold cross-fitting in each rep.
+// 4. Short-stacking via nnls1 in each rep (automatic in ddml).
+// 5. Aggregate coefficients (mean and median).
+// 6. Report stacking weights across reps.
+
+// Reload data for fresh start
+use "https://dmlguide.github.io/assets/dta/GN2021.dta", clear
+gen sd_EE = sd_of_gen_mean_temp_anom_EE
+drop if missing(loggdp)
+
+// Step 1: Set seed for replicability
+set seed 42
+
+// Step 2: Initialize ddml with 10 folds and 11 reps
+ddml init partial, kfolds(10) reps(11)
+
+// Specify the model components
+ddml E[Y|X]: pystacked `Y_var' `X_vars', ///
+    type(reg) methods(ols lassocv rf)
+
+ddml E[D|X]: pystacked `D_var' `X_vars', ///
+    type(reg) methods(ols lassocv rf)
+
+// Step 3: Cross-fit with short-stacking across all 11 reps
+ddml crossfit, shortstack nostdstack
+
+// Step 4: Estimate with median aggregation
+ddml estimate, robust rep(median)

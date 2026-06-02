@@ -1,0 +1,42 @@
+# In the GN estimations, GDP is missing for one country.
+# For simplicity, we just drop this one country so that it is never used.
+gn <- gn |> filter(!is.na(loggdp))
+
+# To make the code more readable, define locals for Y, D and X:
+Y_var  <- "A198new"
+D_var  <- "sd_EE"
+X_vars <- c("v104_ee", "settlement_ee", "polhierarchies_ee", "loggdp")
+
+# In R, we now use ddml with learners for OLS, cross-validated lasso,
+# and random forest combined via short-stacking (nnls1).
+
+# Prepare data matrices
+Y <- gn[[Y_var]]
+D <- gn[[D_var]]
+X <- as.matrix(gn[, X_vars])
+
+# Step 1: Specify learners for partially linear model
+learners <- list(
+  list(fun = ols),
+  list(fun = mdl_glmnet, args = list(alpha = 1, nfolds = 5)),  # lasso (5-fold CV)
+  list(fun = mdl_ranger, args = list(num.trees = 500, min.node.size = 5))
+)
+
+# Step 2: Set seed for this single split
+set.seed(12345)
+
+# Step 3: Cross-fit with short-stacking
+ddml_fit <- ddml_plm(
+  y             = Y,
+  D             = D,
+  X             = X,
+  learners      = learners,
+  sample_folds  = 10,
+  ensemble_type = "nnls1",
+  shortstack    = TRUE,
+  cv_folds      = 5,
+  silent        = FALSE
+)
+
+# Step 4: Estimate the partially linear model
+summary(ddml_fit, type = "HC1")
