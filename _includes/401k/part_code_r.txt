@@ -1,0 +1,19 @@
+# DML estimation of the partially linear IV regression (PLIV) coefficient
+pliv_fit <- ddml_pliv(y, D_part, Z, X,
+                      learners      = learners,
+                      sample_folds  = 10,
+                      ensemble_type = "average")
+
+# DML estimation of the local average treatment effect (LATE)
+late_fit <- ddml_late(y, D_part, Z, X,
+                      learners      = learners,
+                      sample_folds  = 10,
+                      ensemble_type = "average",
+                      trim          = 0.001)
+
+# Tidy comparison of the two estimands
+part_tbl <- bind_rows(
+  tidy_ddml(pliv_fit, "PLIV", "participation"),
+  tidy_ddml(late_fit, "LATE", "participation")
+)
+print(part_tbl)

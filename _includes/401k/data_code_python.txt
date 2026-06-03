@@ -1,0 +1,14 @@
+import numpy as np
+import pandas as pd
+from doubleml import (DoubleMLData, DoubleMLPLR, DoubleMLIRM,
+                      DoubleMLPLIV, DoubleMLIIVM)
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.base import clone
+
+dat = pd.read_stata("https://dmlguide.github.io/assets/dta/PVW_data.dta")
+
+np.random.seed(20241111)
+
+# Define control variables
+control_names = ["age", "tw", "inc", "fsize", "db", "marr",
+                 "twoearn", "pira", "hown"]

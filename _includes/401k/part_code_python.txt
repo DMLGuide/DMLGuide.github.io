@@ -1,0 +1,23 @@
+# Build the DoubleMLData object with e401 as instrument for p401
+dml_data_p = DoubleMLData(dat, y_col="net_tfa", d_cols="p401",
+                          z_cols="e401", x_cols=control_names)
+
+# PLIV: partially linear IV regression coefficient
+pliv_fit = DoubleMLPLIV(dml_data_p,
+                        ml_l=clone(ml_outcome_reg),
+                        ml_m=clone(ml_other_reg),
+                        ml_r=clone(ml_other_reg),
+                        n_folds=10)
+pliv_fit.fit()
+
+# LATE: local average treatment effect (interactive IV model)
+iivm_fit = DoubleMLIIVM(dml_data_p,
+                        ml_g=clone(ml_outcome_reg),
+                        ml_m=clone(ml_other_cls),
+                        ml_r=clone(ml_other_cls),
+                        n_folds=10,
+                        trimming_threshold=0.001)
+iivm_fit.fit()
+
+print(compare([pliv_fit, iivm_fit], ["PLIV", "LATE"],
+              "participation", dml_data_p.n_obs))

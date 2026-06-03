@@ -1,0 +1,21 @@
+# DML estimation of the partially linear regression (PLR) coefficient
+plm_fit <- ddml_plm(y, D, X,
+                    learners      = learners,
+                    learners_DX   = learners_DX,
+                    sample_folds  = 10,
+                    ensemble_type = "average")
+
+# DML estimation of the average treatment effect (ATE)
+ate_fit <- ddml_ate(y, D, X,
+                    learners      = learners,
+                    learners_DX   = learners_DX,
+                    sample_folds  = 10,
+                    ensemble_type = "average",
+                    trim          = 0.001)
+
+# Tidy comparison of the two estimands
+elig_tbl <- bind_rows(
+  tidy_ddml(plm_fit, "PLR", "eligibility"),
+  tidy_ddml(ate_fit, "ATE", "eligibility")
+)
+print(elig_tbl)

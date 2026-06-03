@@ -1,0 +1,5 @@
+# A tibble: 2 × 7
+  model term          estimate std.error statistic  p.value     n
+  <chr> <chr>            <dbl>     <dbl>     <dbl>    <dbl> <int>
+1 PLIV  participation   10746.     1323.      8.12 4.59e-16  9915
+2 LATE  participation    9611.     1205.      7.98 1.51e-15  9915

@@ -1,0 +1,5 @@
+eligibility            PLR         ATE
+  estimate        6737.64     6344.02
+  (SE)             909.32      719.96
+  p-value            0.00        0.00
+  Num. obs.          9915        9915

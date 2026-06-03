@@ -14,6 +14,7 @@ _site/
 .bundle/
 vendor/
 
+.venv/*
 
 # Ignore nix stuff
 .direnv/
