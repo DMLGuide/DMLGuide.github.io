@@ -61,22 +61,6 @@ learners_DX <- list(
        args = list(num.trees = 1000,
                    max.depth = 4))
 )
-
-# Small broom-style tidier so we can build comparison tibbles for any
-# ddml fit. Pulls the structural-parameter row (D1 for PLR/PLIV,
-# ATE for ddml_ate, LATE for ddml_late).
-tidy_ddml <- function(fit, model, term) {
-  s <- summary(fit)$coefficients
-  tibble(
-    model     = model,
-    term      = term,
-    estimate  = s[1, 1, 1],
-    std.error = s[1, 2, 1],
-    statistic = s[1, 3, 1],
-    p.value   = s[1, 4, 1],
-    n         = fit$nobs
-  )
-}
 # @end
 
 
@@ -100,11 +84,12 @@ ate_fit <- ddml_ate(y, D, X,
                     ensemble_type = "average",
                     trim          = 0.001)
 
-# Tidy comparison of the two estimands
+# Tidy comparison of the two estimands using ddml::tidy()
 elig_tbl <- bind_rows(
-  tidy_ddml(plm_fit, "PLR", "eligibility"),
-  tidy_ddml(ate_fit, "ATE", "eligibility")
-)
+  PLR = tidy(plm_fit) |> filter(term == "D1"),
+  ATE = tidy(ate_fit),
+  .id = "model"
+) |> as_tibble()
 print(elig_tbl)
 # @end
 
@@ -127,11 +112,12 @@ late_fit <- ddml_late(y, D_part, Z, X,
                       ensemble_type = "average",
                       trim          = 0.001)
 
-# Tidy comparison of the two estimands
+# Tidy comparison of the two estimands using ddml::tidy()
 part_tbl <- bind_rows(
-  tidy_ddml(pliv_fit, "PLIV", "participation"),
-  tidy_ddml(late_fit, "LATE", "participation")
-)
+  PLIV = tidy(pliv_fit) |> filter(term == "D1"),
+  LATE = tidy(late_fit),
+  .id = "model"
+) |> as_tibble()
 print(part_tbl)
 # @end
 

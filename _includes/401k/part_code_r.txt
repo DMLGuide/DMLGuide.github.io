@@ -11,9 +11,10 @@ late_fit <- ddml_late(y, D_part, Z, X,
                       ensemble_type = "average",
                       trim          = 0.001)
 
-# Tidy comparison of the two estimands
+# Tidy comparison of the two estimands using ddml::tidy()
 part_tbl <- bind_rows(
-  tidy_ddml(pliv_fit, "PLIV", "participation"),
-  tidy_ddml(late_fit, "LATE", "participation")
-)
+  PLIV = tidy(pliv_fit) |> filter(term == "D1"),
+  LATE = tidy(late_fit),
+  .id = "model"
+) |> as_tibble()
 print(part_tbl)

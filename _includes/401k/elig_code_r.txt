@@ -13,9 +13,10 @@ ate_fit <- ddml_ate(y, D, X,
                     ensemble_type = "average",
                     trim          = 0.001)
 
-# Tidy comparison of the two estimands
+# Tidy comparison of the two estimands using ddml::tidy()
 elig_tbl <- bind_rows(
-  tidy_ddml(plm_fit, "PLR", "eligibility"),
-  tidy_ddml(ate_fit, "ATE", "eligibility")
-)
+  PLR = tidy(plm_fit) |> filter(term == "D1"),
+  ATE = tidy(ate_fit),
+  .id = "model"
+) |> as_tibble()
 print(elig_tbl)

@@ -5,18 +5,18 @@
 
 # @snippet:elig_out
 # A tibble: 2 × 7
-  model term        estimate std.error statistic  p.value     n
-  <chr> <chr>          <dbl>     <dbl>     <dbl>    <dbl> <int>
-1 PLR   eligibility    7826.      907.      8.63 6.10e-18  9915
-2 ATE   eligibility    6901.      771.      8.95 3.63e-19  9915
+  model term  estimate std.error statistic  p.value ensemble_type
+  <chr> <chr>    <dbl>     <dbl>     <dbl>    <dbl> <chr>        
+1 PLR   D1       7826.      907.      8.63 6.10e-18 average      
+2 ATE   ATE      6901.      771.      8.95 3.63e-19 average      
 # @end
 
 
 # @snippet:part_out
 # A tibble: 2 × 7
-  model term          estimate std.error statistic  p.value     n
-  <chr> <chr>            <dbl>     <dbl>     <dbl>    <dbl> <int>
-1 PLIV  participation   10746.     1323.      8.12 4.59e-16  9915
-2 LATE  participation    9611.     1205.      7.98 1.51e-15  9915
+  model term  estimate std.error statistic  p.value ensemble_type
+  <chr> <chr>    <dbl>     <dbl>     <dbl>    <dbl> <chr>        
+1 PLIV  D1      10746.     1323.      8.12 4.59e-16 average      
+2 LATE  LATE     9611.     1205.      7.98 1.51e-15 average      
 # @end
 
