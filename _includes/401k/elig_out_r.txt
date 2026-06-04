@@ -1,0 +1,5 @@
+# A tibble: 2 × 7
+  model term  estimate std.error statistic  p.value ensemble_type
+  <chr> <chr>    <dbl>     <dbl>     <dbl>    <dbl> <chr>        
+1 PLR   D1       7826.      907.      8.63 6.10e-18 average      
+2 ATE   ATE      6901.      771.      8.95 3.63e-19 average

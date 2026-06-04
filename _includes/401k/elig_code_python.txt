@@ -1,0 +1,33 @@
+# Build the DoubleMLData object (treatment = e401)
+dml_data_e = DoubleMLData(dat, y_col="net_tfa", d_cols="e401",
+                          x_cols=control_names)
+
+# PLR: partially linear regression coefficient
+plr_fit = DoubleMLPLR(dml_data_e,
+                      ml_l=clone(ml_outcome_reg),
+                      ml_m=clone(ml_other_reg),
+                      n_folds=10)
+plr_fit.fit()
+
+# ATE: average treatment effect (interactive regression model)
+irm_fit = DoubleMLIRM(dml_data_e,
+                      ml_g=clone(ml_outcome_reg),
+                      ml_m=clone(ml_other_cls),
+                      n_folds=10,
+                      trimming_threshold=0.001)
+irm_fit.fit()
+
+# Side-by-side comparison of the two estimands
+def compare(fits, labels, row_label, n_obs):
+    fmt = lambda x: f"{x:>12.2f}"
+    rows = [
+        f"{row_label:<14}" + "".join(f"{l:>12}" for l in labels),
+        f"  estimate   " + "".join(fmt(f.coef[0])    for f in fits),
+        f"  (SE)       " + "".join(fmt(f.se[0])      for f in fits),
+        f"  p-value    " + "".join(fmt(f.pval[0])    for f in fits),
+        f"  Num. obs.  " + "".join(f"{n_obs:>12d}"   for _ in fits),
+    ]
+    return "\n".join(rows)
+
+print(compare([plr_fit, irm_fit], ["PLR", "ATE"],
+              "eligibility", dml_data_e.n_obs))

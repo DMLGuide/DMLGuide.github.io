@@ -1,0 +1,21 @@
+# Outputs produced by PVW_ddml.py.
+# `# @snippet:NAME ... # @end` blocks are imported by examples/401k.md via
+# _includes/401k/ -- keep these in sync with the .py script when re-running.
+
+
+# @snippet:elig_out
+eligibility            PLR         ATE
+  estimate        6737.64     6344.02
+  (SE)             909.32      719.96
+  p-value            0.00        0.00
+  Num. obs.          9915        9915
+# @end
+
+
+# @snippet:part_out
+participation         PLIV        LATE
+  estimate       10375.66     9343.24
+  (SE)            1290.76     1045.90
+  p-value            0.00        0.00
+  Num. obs.          9915        9915
+# @end

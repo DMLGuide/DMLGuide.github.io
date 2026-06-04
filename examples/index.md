@@ -20,6 +20,7 @@ Here you find a collection of DML illustrations.
   .example-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-auto-rows: 1fr;
     gap: 1.25rem;
     margin: 2rem 0 1rem;
   }
@@ -27,7 +28,6 @@ Here you find a collection of DML illustrations.
     position: relative;
     display: flex;
     flex-direction: column;
-    aspect-ratio: 1 / 1;
     background: #fff;
     border: 1px solid #e5e5e5;
     border-radius: 8px;
@@ -46,7 +46,8 @@ Here you find a collection of DML illustrations.
     outline: none;
   }
   .example-tile-icon {
-    flex: 0 0 54%;
+    flex: 0 0 auto;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -55,14 +56,12 @@ Here you find a collection of DML illustrations.
     border-bottom: 1px solid rgba(128, 0, 0, 0.08);
   }
   .example-tile-icon svg {
-    width: 62%;
-    height: 62%;
-    max-width: 120px;
-    max-height: 90px;
+    width: 120px;
+    height: 90px;
   }
   .example-tile-body {
     flex: 1 1 auto;
-    padding: 0.85rem 1rem 1rem;
+    padding: 0.85rem 1rem 0.9rem;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -75,18 +74,53 @@ Here you find a collection of DML illustrations.
     line-height: 1.2;
   }
   .example-tile-blurb {
+    flex: 1 1 auto;
     font-size: 0.8rem;
     color: #4a4a4a;
-    margin: 0 0 auto !important;
+    margin: 0 !important;
     line-height: 1.4;
   }
+  .example-tile-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.6rem;
+  }
   .example-tile-tags {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     color: #767676;
-    margin: 0.55rem 0 0 !important;
+    margin: 0 !important;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-weight: 600;
+    line-height: 1.3;
+    word-spacing: 0.1em;
+  }
+  .example-tile-langs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .lang-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .lang-stata  { background: #1a5276; }
+  .lang-r      { background: #1f76d3; }
+  .lang-python {
+    background: linear-gradient(135deg,
+                #3776ab 0%,  #3776ab 50%,
+                #ffd43b 50%, #ffd43b 100%);
+    color: #1a1a1a;
   }
 </style>
 
@@ -106,7 +140,14 @@ Here you find a collection of DML illustrations.
     <div class="example-tile-body">
       <div class="example-tile-title">401(k) Eligibility</div>
       <p class="example-tile-blurb">A toy starter: estimating PLR coefficients, ATEs, and LATEs with DML.</p>
-      <p class="example-tile-tags">PLR · ATE · LATE</p>
+      <div class="example-tile-footer">
+        <p class="example-tile-tags">PLR · ATE · LATE</p>
+        <div class="example-tile-langs">
+          <span class="lang-chip lang-stata"  title="Stata code included">Stata</span>
+          <span class="lang-chip lang-r"      title="R code included">R</span>
+          <span class="lang-chip lang-python" title="Python code included">Python</span>
+        </div>
+      </div>
     </div>
   </a>
 
@@ -151,7 +192,14 @@ Here you find a collection of DML illustrations.
     <div class="example-tile-body">
       <div class="example-tile-title">Cultural Persistence</div>
       <p class="example-tile-blurb">PLM in a small cross-section: climate volatility and tradition (Giuliano &amp; Nunn).</p>
-      <p class="example-tile-tags">PLM · small N</p>
+      <div class="example-tile-footer">
+        <p class="example-tile-tags">PLM · small N</p>
+        <div class="example-tile-langs">
+          <span class="lang-chip lang-stata"  title="Stata code included">Stata</span>
+          <span class="lang-chip lang-r"      title="R code included">R</span>
+          <span class="lang-chip lang-python" title="Python code included">Python</span>
+        </div>
+      </div>
     </div>
   </a>
 
@@ -168,7 +216,12 @@ Here you find a collection of DML illustrations.
     <div class="example-tile-body">
       <div class="example-tile-title">Hospitalization Effects</div>
       <p class="example-tile-blurb">DML for difference-in-differences under conditional parallel trends.</p>
-      <p class="example-tile-tags">DiD · panel</p>
+      <div class="example-tile-footer">
+        <p class="example-tile-tags">DiD · panel</p>
+        <div class="example-tile-langs">
+          <span class="lang-chip lang-r" title="R code included">R</span>
+        </div>
+      </div>
     </div>
   </a>
 

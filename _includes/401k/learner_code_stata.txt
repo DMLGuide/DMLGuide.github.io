@@ -1,0 +1,4 @@
+// Random forest with 1000 trees: depth 8 for the outcome equation,
+// depth 4 for the remaining nuisance functions.
+global rfoutcome n_estimators(1000) max_depth(8)
+global rfother   n_estimators(1000) max_depth(4)

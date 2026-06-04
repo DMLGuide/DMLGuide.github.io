@@ -1,0 +1,17 @@
+// PLR: partially linear regression coefficient
+ddml init partial, kfolds(10)
+ddml E[Y|X]: pystacked $Y $X , type(reg) methods(rf) cmdopt1($rfoutcome)
+ddml E[D|X]: pystacked $Z $X , type(reg) methods(rf) cmdopt1($rfother)
+ddml crossfit
+eststo m_plr: ddml estimate, robust
+
+// ATE: average treatment effect (interactive model)
+ddml init interactive, kfolds(10)
+ddml E[Y|X,D]: pystacked $Y $X , type(reg)   methods(rf) cmdopt1($rfoutcome)
+ddml E[D|X]:   pystacked $Z $X , type(class) methods(rf) cmdopt1($rfother)
+ddml crossfit
+eststo m_ate: ddml estimate, robust trim(0.001)
+
+esttab m_plr m_ate, mtitles("PLR" "ATE") ///
+    b(%9.2f) se(%9.2f) star(* 0.05 ** 0.01 *** 0.001) ///
+    stats(N, fmt(%9.0f) labels("Num. obs."))

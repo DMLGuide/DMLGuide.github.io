@@ -1,0 +1,5 @@
+# A tibble: 2 × 7
+  model term  estimate std.error statistic  p.value ensemble_type
+  <chr> <chr>    <dbl>     <dbl>     <dbl>    <dbl> <chr>        
+1 PLIV  D1      10746.     1323.      8.12 4.59e-16 average      
+2 LATE  LATE     9611.     1205.      7.98 1.51e-15 average

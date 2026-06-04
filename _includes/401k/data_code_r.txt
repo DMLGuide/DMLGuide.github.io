@@ -1,0 +1,19 @@
+library(haven)
+library(ddml)
+library(ranger)
+library(tidymodels)
+
+dat <- read_dta("https://dmlguide.github.io/assets/dta/PVW_data.dta")
+
+set.seed(20241111)
+
+# Define control variables
+control_names <- c("age", "tw", "inc", "fsize", "db", "marr",
+                   "twoearn", "pira", "hown")
+
+# Extract variables
+y      <- dat$net_tfa
+D      <- dat$e401     # eligibility
+D_part <- dat$p401     # participation
+Z      <- dat$e401     # instrument
+X      <- as.matrix(dat[, control_names])

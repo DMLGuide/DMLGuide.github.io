@@ -1,0 +1,10 @@
+clear all
+set more off
+set seed 20241111
+
+use "https://dmlguide.github.io/assets/dta/PVW_data.dta", clear
+
+global Y net_tfa
+global X age tw inc fsize db marr twoearn pira hown
+global D p401
+global Z e401

@@ -1,0 +1,13 @@
+# Random forest with 1000 trees: depth 8 for the outcome equation,
+# depth 4 for the remaining nuisance functions.
+learners <- list(
+  list(fun = mdl_ranger,
+       args = list(num.trees = 1000,
+                   max.depth = 8))
+)
+
+learners_DX <- list(
+  list(fun = mdl_ranger,
+       args = list(num.trees = 1000,
+                   max.depth = 4))
+)
