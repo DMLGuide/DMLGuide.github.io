@@ -1,174 +1,166 @@
-# just-the-docs-template
+# A Guide to Double Machine Learning — Website
 
-This is a *bare-minimum* template to create a [Jekyll] site that:
+Jekyll-based companion site for our review paper. Live URL:
+<https://dmlguide.github.io>.
 
-- uses the [Just the Docs] theme;
-- can be built and published on [GitHub Pages];
-- can be built and previewed locally, and published on other platforms.
+Theme: [Just the Docs](https://just-the-docs.github.io/just-the-docs/).
+Local build: `bundle install && bundle exec jekyll serve` →
+<http://127.0.0.1:4000>.
 
-More specifically, the created site:
+---
 
-- uses a gem-based approach, i.e. uses a `Gemfile` and loads the `just-the-docs` gem;
-- uses the [GitHub Pages / Actions workflow] to build and publish the site on GitHub Pages.
+## Where we stand (as of 2026-06-04)
 
-To get started with creating a site, simply:
+### Landing page (`examples/index.md`)
 
-1. click "[use this template]" to create a GitHub repository
-2. go to Settings > Pages > Build and deployment > Source, and select GitHub Actions
+Three example tiles are currently visible; two more are hidden behind a
+comment block and can be re-enabled by removing the `<!-- … -->` wrapper.
 
-If you want to maintain your docs in the `docs` directory of an existing project repo, see [Hosting your docs from an existing project repo](#hosting-your-docs-from-an-existing-project-repo).
+| Tile | Status | Languages | Notes |
+| --- | --- | --- | --- |
+| 401(k) Eligibility | live | Stata · R · Python | revised to codetabs structure (see below) |
+| Cultural Persistence (GN) | live | Stata · R · Python | reference template — all subsequent examples mirror this style |
+| Hospitalization Effects (HRS) | live | R | still on old `<details>` blocks |
+| Angrist & Evans IV | hidden | — | needs revision before re-enabling |
+| Monopsony on MTurk | hidden | — | three-part write-up still under construction |
 
-After completing the creation of your new site on GitHub, update it as needed:
+Tile layout (June 2026 revision): no longer aspect-ratio-locked. Icon is a
+fixed 140 px header, body grows to fit content, grid stretches all tiles to
+the tallest in a row. Footer carries the topic tags (small caps) plus
+language chips (`Stata` dark blue, `R` blue, `Python` blue/yellow split).
 
-## Replace the content of the template pages
+### Example pages
 
-Update the following files to your own content:
+Two styles coexist in `examples/`:
 
-- `index.md` (your new home page)
-- `README.md` (information for those who access your site repo on GitHub)
+- **New (codetabs) style** — used by `GN.md` and `401k.md`.
+  - Prose is interleaved with `{% include codetabs.html … %}` blocks that
+    expose tabbed Stata / R / Python views.
+  - Code and output are pulled from `_includes/<example>/<snippet>_<lang>.txt`.
+  - Snippets are auto-generated from the per-language source files in
+    `_<example>/{R,Python,Stata}/` via `@snippet:NAME … @end` markers
+    (see "Snippet workflow" below).
+- **Old (`<details>` blocks) style** — used by `Aizer.md`, `AngristEvans.md`,
+  `HRS.md`, `JTPA.md`. Code and output are pasted inline inside collapsible
+  HTML `<details>` elements. These pages still need migration.
 
-## Changing the version of the theme and/or Jekyll
+| Page | Style | Files |
+| --- | --- | --- |
+| `examples/GN.md` | codetabs | sources in `_GN/`, snippets in `_includes/GN/` |
+| `examples/401k.md` | codetabs | sources in `_401k/`, snippets in `_includes/401k/` |
+| `examples/HRS.md` | `<details>` | inline |
+| `examples/Aizer.md` | `<details>` | inline |
+| `examples/AngristEvans.md` | `<details>` | inline |
+| `examples/JTPA.md` | `<details>` | inline |
+| `examples/Monopsony_*.md` | prose only | — |
 
-Simply edit the relevant line(s) in the `Gemfile`.
+### Snippet workflow (codetabs examples)
 
-## Adding a plugin
+Each example folder (`_GN/`, `_401k/`) is self-contained:
 
-The Just the Docs theme automatically includes the [`jekyll-seo-tag`] plugin.
+```
+_<example>/
+├── Makefile
+├── build_snippets.py
+├── run_stata.py             # only if Stata is reproducible locally
+├── R/
+│   ├── <script>.R           # @snippet:NAME … @end markers
+│   └── <script>_output.txt  # captured stdout, also marker-wrapped
+├── Python/
+│   ├── <script>.py
+│   └── <script>_output.txt
+└── Stata/
+    ├── <script>.do
+    └── <script>_output.txt  # written by run_stata.py from .log
+```
 
-To add an extra plugin, you need to add it in the `Gemfile` *and* in `_config.yml`. For example, to add [`jekyll-default-layout`]:
+Commands (run from inside `_<example>/`):
 
-- Add the following to your site's `Gemfile`:
+| Command | Effect |
+| --- | --- |
+| `make snippets` | re-extract `@snippet:NAME … @end` blocks from R, Python, Stata sources/logs into `../_includes/<example>/` |
+| `make stata-run` | re-run Stata in batch mode (env var `STATA_BIN` to override path), then `make snippets` |
+| `make clean` | drop the snippet directory and Stata log |
 
-  ```ruby
-  gem "jekyll-default-layout"
-  ```
+The R and Python scripts also write their own log files (similar
+marker-wrapped) so that running the script and then `make snippets` is
+enough to refresh the blog output. The R scripts use `ddml::tidy()` from
+the `ddml` package together with `tidymodels` for compact comparison
+tibbles. The Python scripts use `DoubleML` with `scikit-learn` learners.
 
-- And add the following to your site's `_config.yml`:
+Python deps: a local `.venv` lives at `website/.venv/` with `doubleml`,
+`scikit-learn`, `pandas`, `statsmodels`, `matplotlib` installed against
+homebrew's `python@3.12`. Activate or call binaries directly, e.g.
+`./.venv/bin/python _401k/Python/PVW_ddml.py`.
 
-  ```yaml
-  plugins:
-    - jekyll-default-layout
-  ```
+### Build artifacts
 
-Note: If you are using a Jekyll version less than 3.5.0, use the `gems` key instead of `plugins`.
+- `_includes/GN/`, `_includes/401k/` — auto-generated; do not hand-edit.
+  Re-run `make snippets` after touching the corresponding R/Python/Stata
+  sources.
+- `_site/` — Jekyll output; ignored by source control.
+- `jekyll.log` — last serve session log.
 
-## Publishing your site on GitHub Pages
+### Theme tweaks (`_sass/custom/custom.scss`)
 
-1.  If your created site is `YOUR-USERNAME/YOUR-SITE-NAME`, update `_config.yml` to:
+- UChicago maroon (`#800000`) replaces the default Just-the-Docs purple
+  for headings, nav, buttons, footnote rule.
+- Code-language tabs (`.codetabs`) styling lives here. The HTML lives in
+  `_includes/codetabs.html`; the chosen tab is driven by `:checked` on
+  hidden radio inputs (no JS).
+- Examples landing-page grid: see `.example-grid`, `.example-tile`,
+  `.example-tile-langs`, `.lang-chip`. The same rules are duplicated as
+  an inline `<style>` block at the top of `examples/index.md` so that
+  the layout still works if SCSS recompile fails (e.g. on a stale
+  GitHub Pages cache).
 
-    ```yaml
-    title: YOUR TITLE
-    description: YOUR DESCRIPTION
-    theme: just-the-docs
+---
 
-    url: https://YOUR-USERNAME.github.io/YOUR-SITE-NAME
+## Open work
 
-    aux_links: # remove if you don't want this link to appear on your pages
-      Template Repository: https://github.com/YOUR-USERNAME/YOUR-SITE-NAME
-    ```
+1. **Migrate the remaining `<details>`-style example pages** (HRS, Aizer,
+   AngristEvans, JTPA) onto the codetabs structure. The GN page is the
+   reference; the 401k page demonstrates the workflow on a smaller R/Python
+   example using DoubleML.
+2. **Decide language coverage** for HRS, Aizer, AngristEvans, JTPA. Add a
+   Python implementation for any that should be Python-supported, then
+   add the corresponding `lang-chip` badges to the index tiles.
+3. **Re-enable the Angrist & Evans tile** once that page is revised.
+4. **Complete the Monopsony series** (three Markdown files already exist
+   in `examples/`); revise the tile copy/icon and re-enable.
+5. **Replace `lang-chip` text labels with proper SVG logos** if a future
+   pass wants brand-accurate marks instead of colored text chips.
 
-2.  Push your updated `_config.yml` to your site on GitHub.
+---
 
-3.  In your newly created repo on GitHub:
-    - go to the `Settings` tab -> `Pages` -> `Build and deployment`, then select `Source`: `GitHub Actions`.
-    - if there were any failed Actions, go to the `Actions` tab and click on `Re-run jobs`.
+## Local development
 
-## Building and previewing your site locally
+```sh
+bundle install                          # one-time
+bundle exec jekyll serve                # → http://127.0.0.1:4000
+```
 
-Assuming [Jekyll] and [Bundler] are installed on your computer:
+To refresh codetabs snippets after editing R or Python sources:
 
-1.  Change your working directory to the root directory of your site.
+```sh
+cd _GN   && make snippets               # or _401k
+```
 
-2.  Run `bundle install`.
+To re-run Stata and regenerate the Stata log + snippets:
 
-3.  Run `bundle exec jekyll serve` to build your site and preview it at `localhost:4000`.
+```sh
+cd _GN   && make stata-run              # or _401k
+```
 
-    The built site is stored in the directory `_site`.
+The `STATA_BIN` env var lets you point at a non-default Stata install
+(default: `/Applications/StataNow/StataSE.app/Contents/MacOS/stata-se`).
 
-## Publishing your built site on a different platform
+---
 
-Just upload all the files in the directory `_site`.
+## Publishing
 
-## Customization
-
-You're free to customize sites that you create with this template, however you like!
-
-[Browse our documentation][Just the Docs] to learn more about how to use this theme.
-
-## Hosting your docs from an existing project repo
-
-You might want to maintain your docs in an existing project repo. Instead of creating a new repo using the [just-the-docs template](https://github.com/just-the-docs/just-the-docs-template), you can copy the template files into your existing repo and configure the template's Github Actions workflow to build from a `docs` directory. You can clone the template to your local machine or download the `.zip` file to access the files.
-
-### Copy the template files
-
-1.  Create a `.github/workflows` directory at your project root if your repo doesn't already have one. Copy the `pages.yml` file into this directory. GitHub Actions searches this directory for workflow files.
-
-2.  Create a `docs` directory at your project root and copy all remaining template files into this directory.
-
-### Modify the GitHub Actions workflow
-
-The GitHub Actions workflow that builds and deploys your site to Github Pages is defined by the `pages.yml` file. You'll need to edit this file to that so that your build and deploy steps look to your `docs` directory, rather than the project root.
-
-1.  Set the default `working-directory` param for the build job.
-
-    ```yaml
-    build:
-      runs-on: ubuntu-latest
-      defaults:
-        run:
-          working-directory: docs
-    ```
-
-2.  Set the `working-directory` param for the Setup Ruby step.
-
-    ```yaml
-    - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1'
-          bundler-cache: true
-          cache-version: 0
-          working-directory: '${{ github.workspace }}/docs'
-    ```
-
-3.  Set the path param for the Upload artifact step:
-
-    ```yaml
-    - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: "docs/_site/"
-    ```
-
-4.  Modify the trigger so that only changes within the `docs` directory start the workflow. Otherwise, every change to your project (even those that don't affect the docs) would trigger a new site build and deploy.
-
-    ```yaml
-    on:
-      push:
-        branches:
-          - "main"
-        paths:
-          - "docs/**"
-    ```
-
-## Licensing and Attribution
-
-This repository is licensed under the [MIT License]. You are generally free to reuse or extend upon this code as you see fit; just include the original copy of the license (which is preserved when you "make a template"). While it's not necessary, we'd love to hear from you if you do use this template, and how we can improve it for future use!
-
-The deployment GitHub Actions workflow is heavily based on GitHub's mixed-party [starter workflows]. A copy of their MIT License is available in [actions/starter-workflows].
-
-----
-
-[^1]: [It can take up to 10 minutes for changes to your site to publish after you push the changes to GitHub](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/creating-a-github-pages-site-with-jekyll#creating-your-site).
-
-[Jekyll]: https://jekyllrb.com
-[Just the Docs]: https://just-the-docs.github.io/just-the-docs/
-[GitHub Pages]: https://docs.github.com/en/pages
-[GitHub Pages / Actions workflow]: https://github.blog/changelog/2022-07-27-github-pages-custom-github-actions-workflows-beta/
-[Bundler]: https://bundler.io
-[use this template]: https://github.com/just-the-docs/just-the-docs-template/generate
-[`jekyll-default-layout`]: https://github.com/benbalter/jekyll-default-layout
-[`jekyll-seo-tag`]: https://jekyll.github.io/jekyll-seo-tag
-[MIT License]: https://en.wikipedia.org/wiki/MIT_License
-[starter workflows]: https://github.com/actions/starter-workflows/blob/main/pages/jekyll.yml
-[actions/starter-workflows]: https://github.com/actions/starter-workflows/blob/main/LICENSE
+The site is served from GitHub Pages with the workflow in
+`.github/workflows/pages.yml` (boilerplate from the Just-the-Docs
+template). A push to `main` triggers a build and deploy; the
+`_includes/<example>/` snippets must be committed for the build to
+succeed (the deploy runner does not re-run R/Python/Stata).
