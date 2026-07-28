@@ -108,7 +108,7 @@ In total, we perform $2K \cdot S$ fine-tuning operations where $K=$ number of fo
 
 ### Implementation of DML 
 
-For practical reasons, we perform the fine-tuning step in Python (saving the embeddings for each $k$ and outcome), but do the downstream nuisance function estimation and structural parameter estimation in R. The code below illustrates the implementation of cross-fitting in R for log duration and cross-fitting iteration $k$:
+Due to Python's better LLM support, we perform the fine-tuning step in Python (saving the embeddings for each $k$ and outcome), but do the downstream nuisance function estimation and structural parameter estimation in R. The code below illustrates the implementation of cross-fitting in R for log duration and cross-fitting iteration $k$:
 
 ```r
 # retrieve fine-tuned embeddings (generated in Python & stored locally)
@@ -165,8 +165,9 @@ modelsummary(
     list(raw = "r2_d", clean = "R²(D|X)",  fmt = 3)
   ),
   fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
+  estimate  = "{estimate} ({std.error})",
+  statistic = NULL,
+  output    = "markdown"
 )
 ```
 

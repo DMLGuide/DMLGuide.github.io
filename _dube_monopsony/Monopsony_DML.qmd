@@ -35,7 +35,7 @@ How much monopsony power does an online platform give to firms? To answer this q
 
 MTurk is a marketplace for short, online tasks called HITs (Human Intelligence Tasks), e.g., labeling images, transcribing audio, filling out surveys. A recruiter posts a HIT, including a description of the task, sets a reward in dollars, and waits for workers to claim and complete it.
 
-We discuss this application in three blog entries that complement Section 6 in the paper: Part 1 (this part) illustrates a simple DML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings. Part 3 discusses validation exercises.
+We discuss this application in three blog entries that complement Section 6 in our paper: Part 1 (this part) illustrates a simple DML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings (numeric vector representations of the task text produced by [DeBERTa](https://arxiv.org/abs/2006.03654), a pre-trained language model). Part 3 discusses validation exercises.
 
 ## 1. Model and identification
 
@@ -132,8 +132,9 @@ modelsummary(
     list(raw = "r2_d", clean = "R²(D|X)",  fmt = 3)
   ),
   fmt       = 3,
-  statistic = "std.error",
-  output    = "html"
+  estimate  = "{estimate} ({std.error})",
+  statistic = NULL,
+  output    = "markdown"
 )
 ```
 

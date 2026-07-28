@@ -76,7 +76,7 @@ The classical study of [Angrist & Evans (1998)](https://doi.org/10.1257/aer.88.3
 
 [Angrist & Frandsen (2022)](https://doi.org/10.1086/717933) revisit this application in *Machine Labor* and ask whether machine learning can be used inside the first stage of two-stage least squares. They show that it can go badly: with random forests, the second-stage effect of a third child becomes imprecisely estimated, and a placebo check using a signal-free fake instrument yields spurious results.
 
-This post shows that the failure of ML generated instruments is not fundamental. With nuisance estimators that respect the identifying restrictions of the design, DML reproduces the 2SLS point estimate on the real instrument and correctly refuses to find signal using placebo instruments.
+This post shows that the failure of ML generated instruments is not fundamental. With nuisance estimators that respect the identifying restrictions of the design, DML lands essentially on the 2SLS point estimate with the real instrument and correctly refuses to find signal using placebo instruments.
 
 ## The identification issue
 
@@ -99,7 +99,7 @@ The outcome ($Y$ = `workedm`) is an indicator for whether the mother is working.
 
 DML estimates $\theta$ from a residualized score: it instruments the residualized treatment $\tilde D = D - \hat m(X)$ with the residualized instrument $\tilde Z = Z - \hat r(X)$ in a regression on $\tilde Y = Y - \hat g(X)$. The nuisance functions $\hat g$, $\hat m$, and $\hat r$ are estimated by machine learning on held-out folds.
 
-The problem sits in $\hat r(X)$. By construction,
+The problem sits in $\hat r(X)$. As Angrist & Frandsen note (p. S131), `samesex` is by construction a deterministic function of the two sex indicators:
 
 $$
 \text{samesex} = \text{boy1st}\cdot\text{boy2nd} + (1-\text{boy1st})(1-\text{boy2nd}),
@@ -111,7 +111,7 @@ so any flexible machine learner that is free to combine `boy1st` and `boy2nd` wi
 
 ## Two ways to encode the restriction
 
-We need a learner that fits $r(X)$ flexibly in `agem1`, `agefstm`, race, and `educm`, but is forbidden from interacting `boy1st` with `boy2nd`. Below we show two ways to enforce this: the first approach uses regularized regression and relies on block-structured polynomial; the second approach implements no-interaction constraints in tree-based boosting (using the XGBoost package). 
+We need a learner that fits $r(X)$ flexibly in `agem1`, `agefstm`, the race indicators (`blackm`, `hispm`, `othracem`), and `educm`, but is forbidden from interacting `boy1st` with `boy2nd`. Below we show two ways to enforce this: the first approach uses regularized regression and relies on block-structured polynomial; the second approach implements no-interaction constraints in tree-based boosting (using the XGBoost package). 
 
 ### Setup and variables
 
@@ -222,7 +222,7 @@ fit_ddml <- ddml_pliv(
 
 We estimate the model twice: once with the observed `samesex` instrument, and once with a placebo $Z=$ `agem1 + educm + Uniform(0,1)`, following Angrist & Frandsen. After residualizing on $X$, the placebo is just noise, so any apparent first-stage signal there is spurious by construction.
 
-### Real IV (`samesex`) — DML reproduces 2SLS
+### Real IV (`samesex`) — DML comes in close to 2SLS
 
 With the observed instrument, all constrained DML variants — stacking, lasso, ridge, XGBoost — land essentially on the 2SLS point estimate. Unconstrained XGBoost (the last two rows of the table) drifts off and standard errors inflate.
 
@@ -267,7 +267,7 @@ cat(
 
 ## Takeaway
 
-In the Angrist & Evans application, identification rests on a functional-form restriction that 2SLS imposes implicitly. Replacing the linear first stage with a flexible learner leaves it unenforced. This post shows two ways to re-impose it without losing flexibility: regularized regression on a custom polynomial dictionary, and XGBoost with interaction constraints. With first-stage learners that respect the restriction, DML reproduces the 2SLS estimate on the observed instrument and returns a first stage indistinguishable from zero on the placebo.
+In the Angrist & Evans application, identification rests on a functional-form restriction that 2SLS imposes implicitly. Replacing the linear first stage with a flexible learner leaves it unenforced. This post shows two ways to re-impose it without losing flexibility: regularized regression on a custom polynomial dictionary, and XGBoost with interaction constraints. With first-stage learners that respect the restriction, DML essentially coincides with the 2SLS estimate on the observed instrument and returns a first stage indistinguishable from zero on the placebo.
 
 ## References
 

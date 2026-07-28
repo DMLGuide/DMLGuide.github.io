@@ -15,7 +15,7 @@ library(ddml)
 # Set up
 # ==============================================================================
 
-data_root <- file.path("/Users/kahrens/Downloads/dataverse_files/Data/dube_monopsony")
+data_root <- file.path("/Users/kahrens/MyProjects/JEL")
 data_path     <- file.path(data_root, "Data/")
 
 outfile <- "/Users/kahrens/MyProjects/JEL/website/_dube_monopsony/data/monopsony_blog.rds"
