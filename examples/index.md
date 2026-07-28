@@ -151,7 +151,6 @@ Here you find a collection of DML illustrations.
     </div>
   </a>
 
-  <!-- Temporarily hidden — re-enable by removing the surrounding comment.
   <a class="example-tile" href="{{ '/examples/AngristEvans' | relative_url }}">
     <div class="example-tile-icon">
       <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -169,11 +168,15 @@ Here you find a collection of DML illustrations.
     </div>
     <div class="example-tile-body">
       <div class="example-tile-title">Angrist &amp; Evans IV</div>
-      <p class="example-tile-blurb">Revisiting the <em>Machine Labor</em> critique: DML reproduces 2SLS where naive ML fails.</p>
-      <p class="example-tile-tags">IV · PLIV</p>
+      <p class="example-tile-blurb">Revisiting the <em>Machine Labor</em> critique: DML lands essentially on 2SLS where naive ML fails.</p>
+      <div class="example-tile-footer">
+        <p class="example-tile-tags">IV · PLIV</p>
+        <div class="example-tile-langs">
+          <span class="lang-chip lang-r" title="R code included">R</span>
+        </div>
+      </div>
     </div>
   </a>
-  -->
 
 
   <a class="example-tile" href="{{ '/examples/GN' | relative_url }}">
@@ -225,7 +228,6 @@ Here you find a collection of DML illustrations.
     </div>
   </a>
 
-  <!-- Temporarily hidden — re-enable by removing the surrounding comment.
   <a class="example-tile" href="{{ '/examples/Monopsony_DML' | relative_url }}">
     <div class="example-tile-icon">
       <svg viewBox="0 0 80 64" width="100" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -243,10 +245,15 @@ Here you find a collection of DML illustrations.
     <div class="example-tile-body">
       <div class="example-tile-title">Monopsony on MTurk</div>
       <p class="example-tile-blurb">Estimating the labor supply elasticity with fine-tuned DeBERTa embeddings.</p>
-      <p class="example-tile-tags">Text · embeddings · 3 parts</p>
+      <div class="example-tile-footer">
+        <p class="example-tile-tags">Text · embeddings · 3 parts</p>
+        <div class="example-tile-langs">
+          <span class="lang-chip lang-r"      title="R code included">R</span>
+          <span class="lang-chip lang-python" title="Python code included">Python</span>
+        </div>
+      </div>
     </div>
   </a>
-  -->
 
 
 </div>

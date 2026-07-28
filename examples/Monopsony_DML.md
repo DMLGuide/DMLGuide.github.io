@@ -3,7 +3,6 @@ layout: default
 title: Monopsony I — Simple DML
 parent: Examples
 nav_order: 34
-nav_exclude: true
 math: true
 description: "DML applied to examine monopsony power on MTurk."
 permalink: /examples/Monopsony_DML

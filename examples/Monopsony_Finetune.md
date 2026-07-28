@@ -3,7 +3,6 @@ layout: default
 title: Monopsony II — DML with fine-tuned embeddings
 parent: Examples
 nav_order: 35
-nav_exclude: true
 math: true
 description: "Adding fine-tuned DeBERTa embeddings of the HIT text to the DML control set."
 permalink: /examples/Monopsony_Finetune
