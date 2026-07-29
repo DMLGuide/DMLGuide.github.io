@@ -123,7 +123,7 @@ fit_ols <- feols(resid_log_duration ~ resid_log_reward,
 
 ## Result
 
-<div id="tbl-result">
+<div markdown="block" id="tbl-result">
 
 Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in parentheses; cross-fitted R² reported.
 

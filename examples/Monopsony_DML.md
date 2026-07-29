@@ -96,7 +96,7 @@ A note on usage of `ddml`: passing the `cluster_variable` option does two things
 
 ## 4. Result
 
-<div id="tbl-result">
+<div markdown="block" id="tbl-result">
 
 Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in parentheses.
 

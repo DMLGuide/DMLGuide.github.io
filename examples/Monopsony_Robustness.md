@@ -21,7 +21,7 @@ A single randomization seed generates one random partition of the sample into fo
 
 The table below repeats the random fold splitting and DML estimation five times, using five different seeds. The per-seed estimates span a non-trivial range, so sample-split randomness has a noticeable impact in finite samples.
 
-<div id="tbl-multiseed-xgb">
+<div markdown="block" id="tbl-multiseed-xgb">
 
 Table 1: Per-seed estimates and median-aggregated estimates for the baseline specification.
 
@@ -51,7 +51,7 @@ In the Ipeirotis data, some recruiters have many postings. The same recruiter’
 
 The table below investigates the impact of random fold construction by recruiter versus by observation on the DML estimate and its standard error:
 
-<div id="tbl-S2-folds">
+<div markdown="block" id="tbl-S2-folds">
 
 Table 2: Recruiter-honest folds with cluster-robust SE vs. IID-assumed folds. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner.
 
@@ -87,7 +87,7 @@ Cross-fitting theory accommodates any fixed number of cross-fitting folds $K$, b
 
 The table below compares the baseline $K = 3$ specification against $K = 5$, both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
 
-<div id="tbl-S3-K">
+<div markdown="block" id="tbl-S3-K">
 
 Table 3: K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE.
 
@@ -109,7 +109,7 @@ So far, we have exclusively relied on a particular XGBoost learner for illustrat
 
 The choice of nuisance function estimator is consequential for DML estimation. Poorly chosen or poorly tuned learners can yield misleading DML point estimates because the residual-on-residual regression then absorbs leftover signal that should have been partialed out. As an example, below we compare the baseline `XGB 3` specification against `CV-Lasso` (learner index 2), both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
 
-<div id="tbl-xgb-vs-lasso">
+<div markdown="block" id="tbl-xgb-vs-lasso">
 
 Table 4: XGB 3 vs. CV-Lasso, both median-aggregated over S = 5 seeds. K = 3 recruiter-honest folds; cluster-robust SE.
 
