@@ -11,7 +11,6 @@ layout: default
 title: Monopsony III — Further analysis
 parent: Examples
 nav_order: 36
-nav_exclude: true
 math: true
 description: "Varying the nuisance learner, the number of cross-fitting seeds, K, and cluster-vs-IID fold construction."
 permalink: /examples/Monopsony_Robustness
@@ -54,7 +53,7 @@ suppressPackageStartupMessages({
 
 MONOPSONY_ROOT <- "/Users/kahrens/PP Dropbox/Achim Ahrens/monopsony_data"
 XFIT_BASE      <- file.path(MONOPSONY_ROOT, "dube_monopsony-selected", "xfit")
-DATA_PATH      <- file.path(MONOPSONY_ROOT, "dube_monopsony", "Data")
+DATA_PATH      <- "/Users/kahrens/MyProjects/JEL/Data"
 
 FILE_PATTERN <- "^xfit_(.+)_fold(\\d+)_of(\\d+)_learner(\\d+)_foldseed(\\d+)\\.parquet$"
 
@@ -284,9 +283,10 @@ xgb_seeds <- fit_dml_all_seeds(K = 3, learner = 9, xfit_mode = "xclust")
 xgb_med   <- median_aggregate_dml(xgb_seeds)
 export_dml_table(
   c(xgb_seeds, list("median agg. (S=5)" = xgb_med)),
-  output    = "html",
+  output    = "markdown",
   fmt       = 3,
-  statistic = "std.error"
+  estimate  = "{estimate} ({std.error})",
+  statistic = NULL
 )
 ```
 
@@ -308,17 +308,18 @@ The table below investigates the impact of random fold construction by recruiter
 ```{r tbl-S2-folds}
 #| echo: false
 #| results: asis
-#| tbl-cap: "Table S.2 replica. Recruiter-honest folds with cluster-robust SE vs. IID folds. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner."
+#| tbl-cap: "Recruiter-honest folds with cluster-robust SE vs. IID-assumed folds. Both columns are median-of-medians over S = 5 seeds; K = 3; XGB 3 nuisance learner."
 iid_seeds <- fit_dml_all_seeds(K = 3, learner = 9, xfit_mode = "iid")
 iid_med   <- median_aggregate_dml(iid_seeds)
 export_dml_table(
   list(
     "xclust (baseline)" = xgb_med,
-    "IID folds"         = iid_med
+    "IID-assumed folds"         = iid_med
   ),
-  output    = "html",
+  output    = "markdown",
   fmt       = 3,
-  statistic = "std.error"
+  estimate  = "{estimate} ({std.error})",
+  statistic = NULL
 )
 ```
 
@@ -340,14 +341,14 @@ fit <- ddml_plm(
 
 ### Number of folds $K$
 
-Cross-fitting theory accommodates any fixed number of cross-fitting folds $K$, but in practice results may vary depending on the choice of $K$, especially when the sample size is small. In the paper, **we recommend the largest $K$ consistent with available computing resources, plus a sensitivity check**. 
+Cross-fitting theory accommodates any fixed number of cross-fitting folds $K$, but in practice results may vary depending on the choice of $K$, especially when the sample size is small. In the paper, **we recommend a large $K$ consistent with available computing resources, plus a sensitivity check**. 
 
 The table below compares the baseline $K = 3$ specification against $K = 5$, both median-aggregated over $S = 5$ seeds using the same recruiter-honest fold structure:
 
 ```{r tbl-S3-K}
 #| echo: false
 #| results: asis
-#| tbl-cap: "Table S.3 replica. K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE."
+#| tbl-cap: "K = 3 vs. K = 5. Both columns are median-of-medians over S = 5 seeds; XGB 3 nuisance learner; recruiter-honest folds; cluster-robust SE."
 xgb_K5_seeds <- fit_dml_all_seeds(K = 5, learner = 9, xfit_mode = "xclust")
 xgb_K5_med   <- median_aggregate_dml(xgb_K5_seeds)
 export_dml_table(
@@ -355,9 +356,10 @@ export_dml_table(
     "K = 3 (baseline)" = xgb_med,
     "K = 5"            = xgb_K5_med
   ),
-  output    = "html",
+  output    = "markdown",
   fmt       = 3,
-  statistic = "std.error"
+  estimate  = "{estimate} ({std.error})",
+  statistic = NULL
 )
 ```
 
@@ -380,9 +382,10 @@ export_dml_table(
     "XGB 3 (median agg.)"    = xgb_med,
     "CV-Lasso (median agg.)" = lasso_med
   ),
-  output    = "html",
+  output    = "markdown",
   fmt       = 3,
-  statistic = "std.error"
+  estimate  = "{estimate} ({std.error})",
+  statistic = NULL
 )
 ```
 
@@ -393,10 +396,10 @@ CV-Lasso underperforms badly on both $R^2(Y\mid X)$ and $R^2(D\mid X)$, and the 
 In Section 6 of the paper, we discuss **three recommended options for constructing and validating nuisance function estimators**:
 
 1. Consider performance metrics based on cross-fitted predicted values (e.g., cross-fitted $R^2$), which allow selecting the best-performing learner for each nuisance function separately.
-2. Use formal inference-based learner selection, e.g., the Cross-Validation with Confidence test of Lei (2020).
-3. Use model averaging (stacking) to optimally combine candidate learners using non-negative least squares.
+2. Use formal inference-based learner selection, e.g., the Cross-Validation with Confidence test of [Lei (2020)](https://doi.org/10.1080/01621459.2019.1672556).
+3. Use model averaging (stacking) to optimally combine candidate learners using non-negative least squares. See [Ahrens et al. (2025)](https://doi.org/10.1002/jae.3103) for a discussion of stacking in the DML context.
 
-We focus here on the third approach. For both the outcome and the treatment equation, we form a combination of learners by regressing $Y$ and $D$ on the cross-fitted predicted values of every candidate learner, subject to non-negative weights that sum to one. We refer to this approach as "short-stacking" to distinguish it from an alternative approach that re-estimates the stacking weights for each fold. 
+We focus here on the third approach. For both the outcome and the treatment equation, we form a combination of learners by regressing $Y$ and $D$ on the cross-fitted predicted values of every candidate learner, subject to non-negative weights that sum to one. We refer to this approach as "short-stacking" to distinguish it from an alternative, computationally more demanding approach that re-estimates the stacking weights for each fold. 
 
 Table 6 from the paper reports the stacked DML result: $\hat\theta_0 \approx -0.054$ with $\mathrm{s.e.} = 0.020$. The stacking weights (shown in Table 5 of the paper) load almost entirely on the three XGBoost specifications.
 
@@ -406,8 +409,9 @@ Before reporting DML results, it is essential to validate the nuisance function 
 
 ## References
 
-- Ahrens, A., V. Chernozhukov, C. Hansen, D. Kozbur, M. Schaffer and T. Wiemann. *An Introduction to Double/Debiased Machine Learning.* §5 (median aggregation), §6 (Dube application, Tables 5–6), §7 (implementation guidance).
+- Ahrens, A., V. Chernozhukov, C. Hansen, D. Kozbur, M. Schaffer and T. Wiemann. *An Introduction to Double/Debiased Machine Learning.* 
 - Ahrens, A., C. B. Hansen, M. E. Schaffer and T. Wiemann (2024). [`ddml`: Double/debiased machine learning in R.](https://doi.org/10.18637/jss.v108.i03)
+- Ahrens, A., C. B. Hansen, M. E. Schaffer and T. Wiemann (2025). [Model averaging and double machine learning.](https://doi.org/10.1002/jae.3103) *Journal of Applied Econometrics* 40 (3).
 - Chernozhukov, V., D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey and J. Robins (2018). [Double/Debiased machine learning for treatment and structural parameters.](https://doi.org/10.1111/ectj.12097)
 - Dube, A., J. Jacobs, S. Naidu and S. Suri (2020). [Monopsony in online labor markets.](https://doi.org/10.3386/w26108) *AER: Insights* 2 (1).
-- Lei, J. (2020). Cross-validation with confidence. *Journal of the American Statistical Association.*
+- Lei, J. (2020). [Cross-validation with confidence.](https://doi.org/10.1080/01621459.2019.1672556) *Journal of the American Statistical Association* 115 (532).

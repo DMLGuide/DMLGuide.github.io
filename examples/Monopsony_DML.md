@@ -3,7 +3,6 @@ layout: default
 title: Monopsony I — Simple DML
 parent: Examples
 nav_order: 34
-nav_exclude: true
 math: true
 description: "DML applied to examine monopsony power on MTurk."
 permalink: /examples/Monopsony_DML
@@ -18,7 +17,7 @@ How much monopsony power does an online platform give to firms? To answer this q
 
 MTurk is a marketplace for short, online tasks called HITs (Human Intelligence Tasks), e.g., labeling images, transcribing audio, filling out surveys. A recruiter posts a HIT, including a description of the task, sets a reward in dollars, and waits for workers to claim and complete it.
 
-We discuss this application in three blog entries that complement Section 6 in the paper: Part 1 (this part) illustrates a simple DML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings. Part 3 discusses validation exercises.
+We discuss this application in three blog entries that complement Section 6 in our paper: Part 1 (this part) illustrates a simple DML estimation of the labor supply elasticity using only a single learner and hand-coded control variables. Part 2 incorporates unstructured text data describing the tasks using fine-tuned DeBERTa embeddings (numeric vector representations of the task text produced by [DeBERTa](https://arxiv.org/abs/2006.03654), a pre-trained language model). Part 3 discusses validation exercises.
 
 ## 1. Model and identification
 
@@ -97,84 +96,17 @@ A note on usage of `ddml`: passing the `cluster_variable` option does two things
 
 ## 4. Result
 
-<div id="tbl-result">
+<div markdown="block" id="tbl-result">
 
 Table 1: Coefficient on log(reward). Cluster-robust SE by requester_id in parentheses.
-<!-- preamble start -->
-&#10;    <script src="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.js"></script>
-&#10;    <script>
-      // Create table-specific functions using external factory
-      const tableFns_pyqd5k50s3r646ie140e = TinyTable.createTableFunctions("tinytable_pyqd5k50s3r646ie140e");
-      // tinytable span after
-      window.addEventListener('load', function () {
-          var cellsToStyle = [
-            // tinytable style arrays after
-          { positions: [ { i: '6', j: 2 } ], css_id: 'tinytable_css_mb4vwgqf1oerzf3a7mn4',}, 
-          { positions: [ { i: '2', j: 2 } ], css_id: 'tinytable_css_rz8odn0bo8uwd08tq0az',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 } ], css_id: 'tinytable_css_ts48z9b40cvvx6dqkl36',}, 
-          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_207ymljg133pmzj7edku',}, 
-          { positions: [ { i: '6', j: 1 } ], css_id: 'tinytable_css_qt6vpqa5an519ll2jncd',}, 
-          { positions: [ { i: '2', j: 1 } ], css_id: 'tinytable_css_qxmhvsp33r7uaae0rx6p',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 } ], css_id: 'tinytable_css_zbv7j1y81k3u7652oi4p',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_x28kfpobhocfwtsc15ax',}, 
-          ];
-&#10;          // Loop over the arrays to style the cells
-          cellsToStyle.forEach(function (group) {
-              group.positions.forEach(function (cell) {
-                  tableFns_pyqd5k50s3r646ie140e.styleCell(cell.i, cell.j, group.css_id);
-              });
-          });
-      });
-    </script>
-&#10;    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
-    <style>
-    /* tinytable css entries after */
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_mb4vwgqf1oerzf3a7mn4, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_mb4vwgqf1oerzf3a7mn4 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_rz8odn0bo8uwd08tq0az, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_rz8odn0bo8uwd08tq0az {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_ts48z9b40cvvx6dqkl36, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_ts48z9b40cvvx6dqkl36 { text-align: center }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_207ymljg133pmzj7edku, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_207ymljg133pmzj7edku {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_qt6vpqa5an519ll2jncd, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_qt6vpqa5an519ll2jncd {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_qxmhvsp33r7uaae0rx6p, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_qxmhvsp33r7uaae0rx6p {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_zbv7j1y81k3u7652oi4p, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_zbv7j1y81k3u7652oi4p { text-align: left }
-    #tinytable_pyqd5k50s3r646ie140e td.tinytable_css_x28kfpobhocfwtsc15ax, #tinytable_pyqd5k50s3r646ie140e th.tinytable_css_x28kfpobhocfwtsc15ax {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    </style>
-    <div class="container">
-      <table class="tinytable" id="tinytable_pyqd5k50s3r646ie140e" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing='true'>
-        &#10;        <thead>
-              <tr>
-                <th scope="col" data-row="0" data-col="1"> </th>
-                <th scope="col" data-row="0" data-col="2">DML</th>
-              </tr>
-        </thead>
-        &#10;        <tbody>
-                <tr>
-                  <td data-row="1" data-col="1">log(reward)</td>
-                  <td data-row="1" data-col="2">0.024</td>
-                </tr>
-                <tr>
-                  <td data-row="2" data-col="1"></td>
-                  <td data-row="2" data-col="2">(0.523)</td>
-                </tr>
-                <tr>
-                  <td data-row="3" data-col="1">n</td>
-                  <td data-row="3" data-col="2">258352</td>
-                </tr>
-                <tr>
-                  <td data-row="4" data-col="1">K</td>
-                  <td data-row="4" data-col="2">3</td>
-                </tr>
-                <tr>
-                  <td data-row="5" data-col="1">R²(Y|X)</td>
-                  <td data-row="5" data-col="2">0.687</td>
-                </tr>
-                <tr>
-                  <td data-row="6" data-col="1">R²(D|X)</td>
-                  <td data-row="6" data-col="2">0.743</td>
-                </tr>
-        </tbody>
-      </table>
-    </div>
-<!-- hack to avoid NA insertion in last line -->
+
+|             | DML           |
+|-------------|---------------|
+| log(reward) | 0.024 (0.523) |
+| n           | 258352        |
+| K           | 3             |
+| R²(Y\|X)    | 0.687         |
+| R²(D\|X)    | 0.743         |
 
 </div>
 

@@ -111,20 +111,26 @@ render: $(BLOG1_MD) $(BLOG2_MD) $(BLOG3_MD)
 # Quarto's gfm output prepends two blank lines before the {=markdown} raw
 # block (an artefact of the suppressed title block). Jekyll requires the
 # `---` front-matter delimiter on line 1, so we strip leading blank lines
-# after each render.
+# after each render. Quarto also wraps tbl-cap tables in bare <div id="tbl-...">
+# blocks; kramdown skips markdown inside raw HTML blocks unless the div carries
+# a markdown attribute, so we add markdown="block" to keep the pipe tables
+# rendering on the Jekyll site.
 $(BLOG1_MD): $(BLOG1_QMD) $(BLOG1_OUT) $(BASIC_PNG)
 	$(QUARTO) render $(BLOG1_QMD)
 	sed -i '' '/./,$$!d' $(BLOG1_MD)
+	sed -i '' 's|^<div id="tbl-|<div markdown="block" id="tbl-|' $(BLOG1_MD)
 
 $(BLOG2_MD): $(BLOG2_QMD) $(BLOG2_OUT) $(ALGO_PNG)
 	$(QUARTO) render $(BLOG2_QMD)
 	sed -i '' '/./,$$!d' $(BLOG2_MD)
+	sed -i '' 's|^<div id="tbl-|<div markdown="block" id="tbl-|' $(BLOG2_MD)
 
 # Part 3 reads the intermediate .RData tree directly in the qmd setup chunk,
 # so the qmd is its only file-level dependency here.
 $(BLOG3_MD): $(BLOG3_QMD)
 	$(QUARTO) render $(BLOG3_QMD)
 	sed -i '' '/./,$$!d' $(BLOG3_MD)
+	sed -i '' 's|^<div id="tbl-|<div markdown="block" id="tbl-|' $(BLOG3_MD)
 
 # --- Per-entry convenience targets ---
 blog1: $(BLOG1_MD)

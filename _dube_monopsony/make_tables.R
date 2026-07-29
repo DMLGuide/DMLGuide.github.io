@@ -40,7 +40,7 @@ options(modelsummary_factory_latex = "tinytable")
 # ==============================================================================
 
 monopsony_root <- "/Users/kahrens/PP Dropbox/Achim Ahrens/monopsony_data"
-data_path <- file.path(monopsony_root, "dube_monopsony", "Data") # raw Ipeirotis CSVs
+data_path <- "/Users/kahrens/MyProjects/JEL/Data" # raw Ipeirotis CSVs
 int_dir   <- file.path(monopsony_root, "intermediate",
                        sprintf("%s_K%d", xfit_mode, nfolds))
 
