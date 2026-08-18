@@ -1,0 +1,848 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       BE-Basic Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: 22-user network, expiring 30 Jun 2027
+Serial number: 501909306443
+  Licensed to: The University of Chicago Booth School of Business
+               Mercury Computing Cluster
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+
+. do gn_latest.do 
+
+. // GN full replication in Stata
+. // "By-hand" DDML approach
+. // =========================
+. 
+. clear
+
+. set more off
+
+. set seed 42
+
+. 
+. version
+version 19.5
+
+. which pystacked
+/home/smkhitaryan/ado/plus/p/pystacked.ado
+*! pystacked v0.7.9
+*! last edited: 26oct2025
+*! authors: aa/ms
+*! pystacked wrapper - calls pystacked1 (default) or pystacked2 (altpython opti
+> on)
+
+. which nnls2
+/home/smkhitaryan/ado/plus/n/nnls2.ado
+*! nnls v1.0.0
+*! last edited: 3aug2026
+*! authors: aa/ms
+
+. 
+. // PART 1: OLS replication
+. 
+. // Load data
+. use "https://dmlguide.github.io/assets/dta/GN2021.dta"
+
+. 
+. // Shorten the name of the causal variable of interest to sd_EE
+. gen sd_EE = sd_of_gen_mean_temp_anom_EE
+
+. 
+. // Replicate results with no controls in Table 1, column (3).
+. // HC1 robust SE
+. reg A198new sd_EE, robust
+
+Linear regression                               Number of obs     =         75
+                                                F(1, 73)          =      13.54
+                                                Prob > F          =     0.0004
+                                                R-squared         =     0.1478
+                                                Root MSE          =     .51072
+
+------------------------------------------------------------------------------
+             |               Robust
+     A198new | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+       sd_EE |  -1.923264   .5227138    -3.68   0.000    -2.965031   -.8814967
+       _cons |   5.006289    .139419    35.91   0.000     4.728428    5.284151
+------------------------------------------------------------------------------
+
+. 
+. di ""
+
+
+. di "PART 1: OLS (A198new ~ sd_EE) with HC1 robust SE"
+PART 1: OLS (A198new ~ sd_EE) with HC1 robust SE
+
+. di ""
+
+
+. 
+. // Figure 5
+. predict hat
+(option xb assumed; fitted values)
+
+. twoway (scatter A198new sd_EE, msymbol(circle) msize(medium)) ///
+>        (line hat sd_EE, sort lwidth(medium)), ///
+>        xlabel(0(0.25)0.5) ylabel(3(1)6) ///
+>        xtitle("Climatic instability") ytitle("Importance of tradition") ///
+>        legend(off) ///
+>        text(2.85 0 "(coef = -1.92, t = -3.68)", placement(east))
+
+. 
+. drop hat
+
+. 
+. // PART 2: DML robustness check (single 10-fold shortstack)
+. 
+. // In the G-N estimations, GDP is missing for one country.
+. // For simplicity, we just drop this one country so that it is never used.
+. drop if missing(loggdp)
+(1 observation deleted)
+
+. 
+. // To make the code more readable, define locals for Y, D and X:
+. local Y_var "A198new"
+
+. local D_var "sd_EE"
+
+. local X_vars "v104_ee settlement_ee polhierarchies_ee loggdp"
+
+. 
+. qui count
+
+. local n = r(N)
+
+. local K = 10
+
+. 
+. // Step 1: Specify the model.
+. // Partially-linear model with 10-fold cross-fitting, single split.
+. 
+. // Create 10-fold split
+. set seed 12345
+
+. gen fold_id = mod(_n - 1, `K') + 1
+
+. gen random_order = runiform()
+
+. sort random_order
+
+. drop random_order
+
+. 
+. // Storage for out-of-sample (cross-fitted) predictions
+. gen Y_hat_ols   = .
+(74 missing values generated)
+
+. gen Y_hat_lasso = .
+(74 missing values generated)
+
+. gen Y_hat_rf    = .
+(74 missing values generated)
+
+. 
+. gen D_hat_ols   = .
+(74 missing values generated)
+
+. gen D_hat_lasso = .
+(74 missing values generated)
+
+. gen D_hat_rf    = .
+(74 missing values generated)
+
+. 
+. // Step 2: Choose the learners.
+. // Unregularized OLS, cross-validated lasso, and random forest.
+. 
+. forvalues k = 1/`K' {
+  2. 
+.     // Learners for E[Y|X]
+. 
+.     qui reg `Y_var' `X_vars' if fold_id != `k'
+  3.     qui predict Y_hat_ols_temp if fold_id == `k'
+  4.     qui replace Y_hat_ols = Y_hat_ols_temp if fold_id == `k'
+  5.     drop Y_hat_ols_temp
+  6. 
+.     qui pystacked `Y_var' `X_vars' if fold_id != `k', ///
+>         type(reg) method(lassocv)
+  7.     qui predict Y_hat_lasso_temp if fold_id == `k'
+  8.     qui replace Y_hat_lasso = Y_hat_lasso_temp if fold_id == `k'
+  9.     drop Y_hat_lasso_temp
+ 10. 
+.     qui pystacked `Y_var' `X_vars' if fold_id != `k', ///
+>         type(reg) method(rf)
+ 11.     qui predict Y_hat_rf_temp if fold_id == `k'
+ 12.     qui replace Y_hat_rf = Y_hat_rf_temp if fold_id == `k'
+ 13.     drop Y_hat_rf_temp
+ 14. 
+.     // Learners for E[D|X]
+. 
+.     qui reg `D_var' `X_vars' if fold_id != `k'
+ 15.     qui predict D_hat_ols_temp if fold_id == `k'
+ 16.     qui replace D_hat_ols = D_hat_ols_temp if fold_id == `k'
+ 17.     drop D_hat_ols_temp
+ 18. 
+.     qui pystacked `D_var' `X_vars' if fold_id != `k', ///
+>         type(reg) method(lassocv)
+ 19.     qui predict D_hat_lasso_temp if fold_id == `k'
+ 20.     qui replace D_hat_lasso = D_hat_lasso_temp if fold_id == `k'
+ 21.     drop D_hat_lasso_temp
+ 22. 
+.     qui pystacked `D_var' `X_vars' if fold_id != `k', ///
+>         type(reg) method(rf)
+ 23.     qui predict D_hat_rf_temp if fold_id == `k'
+ 24.     qui replace D_hat_rf = D_hat_rf_temp if fold_id == `k'
+ 25.     drop D_hat_rf_temp
+ 26. }
+
+. 
+. // Check that predictions are complete
+. assert !missing(Y_hat_ols)
+
+. assert !missing(Y_hat_lasso)
+
+. assert !missing(Y_hat_rf)
+
+. assert !missing(D_hat_ols)
+
+. assert !missing(D_hat_lasso)
+
+. assert !missing(D_hat_rf)
+
+. 
+. // Step 3: Short-stacking via constrained NNLS using nnls2.
+. // Weights are non-negative and sum to 1.
+. // Install with: net install nnls2, from(https://raw.githubusercontent.com/ma
+> rkeschaffer/nnls2/main) replace
+. 
+. // Short-stack weights for Y
+. nnls2 `Y_var' Y_hat_ols Y_hat_lasso Y_hat_rf
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .2399984
+ Y_hat_lasso |    .315451
+    Y_hat_rf |   .4445507
+------------------------------------------------------------------------------
+
+. mat w_Y = e(b)
+
+. matrix rownames w_Y = `Y_var'
+
+. mat list w_Y
+
+w_Y[1,3]
+           Y_hat_ols  Y_hat_lasso     Y_hat_rf
+A198new    .23999839    .31545096    .44455065
+
+. 
+. // Short-stack weights for D
+. nnls2 `D_var' D_hat_ols D_hat_lasso D_hat_rf
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |   4.47e-18
+ D_hat_lasso |   .2807441
+    D_hat_rf |   .7192559
+------------------------------------------------------------------------------
+
+. mat w_D = e(b)
+
+. matrix rownames w_D = `D_var'
+
+. mat list w_D
+
+w_D[1,3]
+         D_hat_ols  D_hat_lasso     D_hat_rf
+sd_EE    4.465e-18    .28074414    .71925586
+
+. 
+. // Short-stacked conditional expectations
+. matrix score Y_hat_ss = w_Y
+
+. matrix score D_hat_ss = w_D
+
+. 
+. // Step 4: PLM estimation (residualised Y on residualised D)
+. gen Y_tilde = `Y_var' - Y_hat_ss
+
+. gen D_tilde = `D_var' - D_hat_ss
+
+. 
+. reg Y_tilde D_tilde, robust
+
+Linear regression                               Number of obs     =         74
+                                                F(1, 72)          =       8.75
+                                                Prob > F          =     0.0042
+                                                R-squared         =     0.1144
+                                                Root MSE          =     .44898
+
+------------------------------------------------------------------------------
+             |               Robust
+     Y_tilde | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+     D_tilde |  -2.194824   .7418893    -2.96   0.004    -3.673753   -.7158946
+       _cons |  -.0054257   .0521123    -0.10   0.917    -.1093096    .0984583
+------------------------------------------------------------------------------
+
+. 
+. di ""
+
+
+. di "PART 2: DML shortstack (single split), HC1 robust SE"
+PART 2: DML shortstack (single split), HC1 robust SE
+
+. di ""
+
+
+. 
+. di ""
+
+
+. di "short-stacked weights across resamples for A198new"
+short-stacked weights across resamples for A198new
+
+. di ""
+
+
+. di "ols      mean_weight=" %9.6f w_Y[1,1] "  rep_1=" %9.6f w_Y[1,1]
+ols      mean_weight= 0.239998  rep_1= 0.239998
+
+. di "lassocv  mean_weight=" %9.6f w_Y[1,2] "  rep_1=" %9.6f w_Y[1,2]
+lassocv  mean_weight= 0.315451  rep_1= 0.315451
+
+. di "rf       mean_weight=" %9.6f w_Y[1,3] "  rep_1=" %9.6f w_Y[1,3]
+rf       mean_weight= 0.444551  rep_1= 0.444551
+
+. 
+. di ""
+
+
+. di "short-stacked weights across resamples for sd_EE"
+short-stacked weights across resamples for sd_EE
+
+. di ""
+
+
+. di "ols      mean_weight=" %9.6f w_D[1,1] "  rep_1=" %9.6f w_D[1,1]
+ols      mean_weight= 0.000000  rep_1= 0.000000
+
+. di "lassocv  mean_weight=" %9.6f w_D[1,2] "  rep_1=" %9.6f w_D[1,2]
+lassocv  mean_weight= 0.280744  rep_1= 0.280744
+
+. di "rf       mean_weight=" %9.6f w_D[1,3] "  rep_1=" %9.6f w_D[1,3]
+rf       mean_weight= 0.719256  rep_1= 0.719256
+
+. 
+. // Clean up before Part 3
+. drop Y_hat_* D_hat_* Y_tilde D_tilde Y_hat_ss D_hat_ss
+
+. 
+. 
+. // PART 3: Final DML model (11 resamples, median aggregation)
+. 
+. set seed 42
+
+. 
+. local K = 10
+
+. local R = 11
+
+. 
+. tempname coef_mat se_mat weights_Y_mat weights_D_mat
+
+. matrix `coef_mat'      = J(`R', 1, .)
+
+. matrix `se_mat'        = J(`R', 1, .)
+
+. matrix `weights_Y_mat' = J(3, `R', .)
+
+. matrix `weights_D_mat' = J(3, `R', .)
+
+. 
+. forvalues r = 1/`R' {
+  2. 
+.     di "Processing resample `r' of `R'..."
+  3. 
+.     drop fold_id
+  4.     gen fold_id = mod(_n - 1, `K') + 1
+  5.     gen random_order = runiform()
+  6.     sort random_order
+  7.     drop random_order
+  8. 
+.     gen Y_hat_ols   = .
+  9.     gen Y_hat_lasso = .
+ 10.     gen Y_hat_rf    = .
+ 11. 
+.     gen D_hat_ols   = .
+ 12.     gen D_hat_lasso = .
+ 13.     gen D_hat_rf    = .
+ 14. 
+.     forvalues k = 1/`K' {
+ 15. 
+.         qui reg `Y_var' `X_vars' if fold_id != `k'
+ 16.         qui predict Y_hat_ols_temp if fold_id == `k'
+ 17.         qui replace Y_hat_ols = Y_hat_ols_temp if fold_id == `k'
+ 18.         drop Y_hat_ols_temp
+ 19. 
+.         qui pystacked `Y_var' `X_vars' if fold_id != `k', ///
+>             type(reg) method(lassocv)
+ 20.         qui predict Y_hat_lasso_temp if fold_id == `k'
+ 21.         qui replace Y_hat_lasso = Y_hat_lasso_temp if fold_id == `k'
+ 22.         drop Y_hat_lasso_temp
+ 23. 
+.         qui pystacked `Y_var' `X_vars' if fold_id != `k', ///
+>             type(reg) method(rf)
+ 24.         qui predict Y_hat_rf_temp if fold_id == `k'
+ 25.         qui replace Y_hat_rf = Y_hat_rf_temp if fold_id == `k'
+ 26.         drop Y_hat_rf_temp
+ 27. 
+.         qui reg `D_var' `X_vars' if fold_id != `k'
+ 28.         qui predict D_hat_ols_temp if fold_id == `k'
+ 29.         qui replace D_hat_ols = D_hat_ols_temp if fold_id == `k'
+ 30.         drop D_hat_ols_temp
+ 31. 
+.         qui pystacked `D_var' `X_vars' if fold_id != `k', ///
+>             type(reg) method(lassocv)
+ 32.         qui predict D_hat_lasso_temp if fold_id == `k'
+ 33.         qui replace D_hat_lasso = D_hat_lasso_temp if fold_id == `k'
+ 34.         drop D_hat_lasso_temp
+ 35. 
+.         qui pystacked `D_var' `X_vars' if fold_id != `k', ///
+>             type(reg) method(rf)
+ 36.         qui predict D_hat_rf_temp if fold_id == `k'
+ 37.         qui replace D_hat_rf = D_hat_rf_temp if fold_id == `k'
+ 38.         drop D_hat_rf_temp
+ 39.     }
+ 40. 
+.     // Short-stacking via nnls2 for this rep
+.     nnls2 `Y_var' Y_hat_ols Y_hat_lasso Y_hat_rf
+ 41.     mat w_Y_`r' = e(b)
+ 42.     matrix `weights_Y_mat'[1, `r'] = w_Y_`r'[1,1]
+ 43.     matrix `weights_Y_mat'[2, `r'] = w_Y_`r'[1,2]
+ 44.     matrix `weights_Y_mat'[3, `r'] = w_Y_`r'[1,3]
+ 45. 
+.     nnls2 `D_var' D_hat_ols D_hat_lasso D_hat_rf
+ 46.     mat w_D_`r' = e(b)
+ 47.     matrix `weights_D_mat'[1, `r'] = w_D_`r'[1,1]
+ 48.     matrix `weights_D_mat'[2, `r'] = w_D_`r'[1,2]
+ 49.     matrix `weights_D_mat'[3, `r'] = w_D_`r'[1,3]
+ 50. 
+.     matrix score Y_hat_ss = w_Y_`r'
+ 51.     matrix score D_hat_ss = w_D_`r'
+ 52. 
+.     gen Y_tilde = `Y_var' - Y_hat_ss
+ 53.     gen D_tilde = `D_var' - D_hat_ss
+ 54. 
+.     qui reg Y_tilde D_tilde, robust
+ 55. 
+.     matrix `coef_mat'[`r', 1] = _b[D_tilde]
+ 56.     matrix `se_mat'[`r', 1]   = _se[D_tilde]
+ 57. 
+.     drop Y_hat_* D_hat_* Y_tilde D_tilde Y_hat_ss D_hat_ss
+ 58. }
+Processing resample 1 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .2759574
+ Y_hat_lasso |   .3913308
+    Y_hat_rf |   .3327118
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .3308006
+    D_hat_rf |   .6691994
+------------------------------------------------------------------------------
+Processing resample 2 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .0670524
+ Y_hat_lasso |   .4461573
+    Y_hat_rf |   .4867904
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .3025947
+    D_hat_rf |   .6974053
+------------------------------------------------------------------------------
+Processing resample 3 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .2494115
+ Y_hat_lasso |   .2753385
+    Y_hat_rf |     .47525
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .2855755
+    D_hat_rf |   .7144245
+------------------------------------------------------------------------------
+Processing resample 4 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .4003619
+ Y_hat_lasso |   .1637006
+    Y_hat_rf |   .4359375
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .3330953
+    D_hat_rf |   .6669047
+------------------------------------------------------------------------------
+Processing resample 5 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |          0
+ Y_hat_lasso |   .5192484
+    Y_hat_rf |   .4807516
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .3551618
+    D_hat_rf |   .6448382
+------------------------------------------------------------------------------
+Processing resample 6 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .4866686
+ Y_hat_lasso |          0
+    Y_hat_rf |   .5133314
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |   5.96e-20
+ D_hat_lasso |   .3866691
+    D_hat_rf |   .6133309
+------------------------------------------------------------------------------
+Processing resample 7 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   4.93e-19
+ Y_hat_lasso |   .4766787
+    Y_hat_rf |   .5233213
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |   1.59e-18
+ D_hat_lasso |   .3032218
+    D_hat_rf |   .6967782
+------------------------------------------------------------------------------
+Processing resample 8 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .2587285
+ Y_hat_lasso |   .4376285
+    Y_hat_rf |   .3036429
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .2298238
+    D_hat_rf |   .7701762
+------------------------------------------------------------------------------
+Processing resample 9 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .1288604
+ Y_hat_lasso |   .3973649
+    Y_hat_rf |   .4737747
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |          0
+ D_hat_lasso |   .2360121
+    D_hat_rf |   .7639879
+------------------------------------------------------------------------------
+Processing resample 10 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |          0
+ Y_hat_lasso |   .5058347
+    Y_hat_rf |   .4941653
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |   3.79e-18
+ D_hat_lasso |   .3847525
+    D_hat_rf |   .6152475
+------------------------------------------------------------------------------
+Processing resample 11 of 11...
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+(74 missing values generated)
+------------------------------------------------------------------------------
+     A198new | Coefficient
+-------------+----------------------------------------------------------------
+   Y_hat_ols |   .0712269
+ Y_hat_lasso |   .5347026
+    Y_hat_rf |   .3940705
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+       sd_EE | Coefficient
+-------------+----------------------------------------------------------------
+   D_hat_ols |   3.90e-19
+ D_hat_lasso |   .3042883
+    D_hat_rf |   .6957117
+------------------------------------------------------------------------------
+
+. 
+. di ""
+
+
+. di "DDML shortstack results across 11 resamples (Stata analogue of ss 1..11):
+> "
+DDML shortstack results across 11 resamples (Stata analogue of ss 1..11):
+
+. di ""
+
+
+. di "  rep           b          se"
+  rep           b          se
+
+. forvalues r = 1/`R' {
+  2.     di %5.0f `r' "  " %10.7f `coef_mat'[`r',1] "  " %10.7f `se_mat'[`r',1]
+  3. }
+    1  -2.1889714   0.7502269
+    2  -2.3536070   0.8290726
+    3  -2.3612016   0.8417276
+    4  -2.3074615   0.8007668
+    5  -2.1491294   0.7837598
+    6  -2.0433935   0.7605523
+    7  -1.8316826   0.7793810
+    8  -2.5147213   0.8424355
+    9  -1.8510158   0.7611350
+   10  -2.0290936   0.7570861
+   11  -2.4215228   0.8021191
+
+. 
+. // Step 5: Median aggregation:
+. // sigma = sqrt( Median( sigma_m^2 + (theta_m - theta_tilde)^2 ) )
+. mata:
+------------------------------------------------- mata (type end to exit) -----
+:     coef_vec    = st_matrix("`coef_mat'")
+
+:     se_vec      = st_matrix("`se_mat'")
+
+:     R           = rows(coef_vec)
+
+:     coef_sorted = sort(coef_vec, 1)
+
+:     if (mod(R,2)==1) {
+>         b_med = coef_sorted[(R+1)/2, 1]
+>     }
+>     else {
+>         b_med = (coef_sorted[R/2,1] + coef_sorted[R/2+1,1]) / 2
+>     }
+
+:     vals        = se_vec:^2 + (coef_vec :- b_med):^2
+
+:     vals_sorted = sort(vals, 1)
+
+:     if (mod(R,2)==1) {
+>         se_med = sqrt(vals_sorted[(R+1)/2, 1])
+>     }
+>     else {
+>         se_med = sqrt((vals_sorted[R/2,1] + vals_sorted[R/2+1,1]) / 2)
+>     }
+
+:     st_numscalar("b_med",  b_med)
+
+:     st_numscalar("se_med", se_med)
+
+: end
+-------------------------------------------------------------------------------
+
+. 
+. di ""
+
+
+. di "Median aggregated short-stack results:"
+Median aggregated short-stack results:
+
+. di ""
+
+
+. di "                    spec           b          se"
+                    spec           b          se
+
+. di "   shortstack median  " %10.7f b_med "  " %10.7f se_med
+   shortstack median  -2.1889714   0.8327907
+
+. 
+. mata:
+------------------------------------------------- mata (type end to exit) -----
+:     wY = st_matrix("`weights_Y_mat'")
+
+:     wD = st_matrix("`weights_D_mat'")
+
+:     R  = cols(wY)
+
+:     learners = ("ols", "lassocv", "rf")
+
+:     printf("\nshort-stacked weights across resamples for A198new (11 reps)\n\
+> n")
+
+short-stacked weights across resamples for A198new (11 reps)
+
+
+:     printf("%-10s  %10s", "learner", "mean_weight")
+learner     mean_weight
+:     for (r=1; r<=R; r++) printf("  %8s", "rep_"+strofreal(r))
+     rep_1     rep_2     rep_3     rep_4     rep_5     rep_6     rep_7     rep_
+> 8     rep_9    rep_10    rep_11
+:     printf("\n")
+
+
+:     for (i=1; i<=3; i++) {
+>         printf("%-10s  %10.6f", learners[i], mean(wY[i,.]'))
+>         for (r=1; r<=R; r++) printf("  %8.6f", wY[i,r])
+>         printf("\n")
+>     }
+ols           0.176206  0.275957  0.067052  0.249411  0.400362  0.000000  0.486
+> 669  0.000000  0.258729  0.128860  0.000000  0.071227
+lassocv       0.377090  0.391331  0.446157  0.275339  0.163701  0.519248  0.000
+> 000  0.476679  0.437629  0.397365  0.505835  0.534703
+rf            0.446704  0.332712  0.486790  0.475250  0.435938  0.480752  0.513
+> 331  0.523321  0.303643  0.473775  0.494165  0.394070
+
+:     printf("\nshort-stacked weights across resamples for sd_EE (11 reps)\n\n"
+> )
+
+short-stacked weights across resamples for sd_EE (11 reps)
+
+
+:     printf("%-10s  %10s", "learner", "mean_weight")
+learner     mean_weight
+:     for (r=1; r<=R; r++) printf("  %8s", "rep_"+strofreal(r))
+     rep_1     rep_2     rep_3     rep_4     rep_5     rep_6     rep_7     rep_
+> 8     rep_9    rep_10    rep_11
+:     printf("\n")
+
+
+:     for (i=1; i<=3; i++) {
+>         printf("%-10s  %10.6f", learners[i], mean(wD[i,.]'))
+>         for (r=1; r<=R; r++) printf("  %8.6f", wD[i,r])
+>         printf("\n")
+>     }
+ols           0.000000  0.000000  0.000000  0.000000  0.000000  0.000000  0.000
+> 000  0.000000  0.000000  0.000000  0.000000  0.000000
+lassocv       0.313818  0.330801  0.302595  0.285575  0.333095  0.355162  0.386
+> 669  0.303222  0.229824  0.236012  0.384753  0.304288
+rf            0.686182  0.669199  0.697405  0.714425  0.666905  0.644838  0.613
+> 331  0.696778  0.770176  0.763988  0.615247  0.695712
+
+: end
+-------------------------------------------------------------------------------
+
+. 
+. di ""
+
+
+. di "========================================"
+========================================
+
+. di "GN replication complete!"
+GN replication complete!
+
+. 
+end of do-file
